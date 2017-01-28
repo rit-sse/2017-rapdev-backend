@@ -26,7 +26,9 @@ def shutdown_session(exception=None):
 @app.route('/v1/auth', methods=['POST'])
 @returns_json
 def auth():
-    username = request.form['username']
+    if not json or not 'username' in request.json:
+        abort(400)
+    username = request.json['username']
 
     user = User.query.filter_by(name=username).first()
 
