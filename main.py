@@ -59,7 +59,7 @@ if __name__ == '__main__':
 # team CRUD
 
 @app.route('/v1/team/', methods=['POST'])
-def add():
+def team_add():
     team = Team(name=request.form['name'])
     db_session.add(team)
     db_session.commit()
@@ -67,15 +67,15 @@ def add():
     return 'team added'
 
 
-@app.route('/v1/team_<int:team_id>/', methods=['GET'])
-def read(team_id):
+@app.route('/v1/team/<int:team_id>/', methods=['GET'])
+def team_read(team_id):
     team = Team.query.get(id=team_id)
 
     return team
 
 
-@app.route('/v1/team_<int:team_id>/update', methods=['POST'])
-def update(team_id):
+@app.route('/v1/team/<int:team_id>/update', methods=['POST'])
+def team_update(team_id):
     team = Team.query.get(id=team_id)
     team.name = request.form['name']
     db_session.commit()
@@ -83,8 +83,8 @@ def update(team_id):
     return 'team added'
 
 
-@app.route('/v1/team_<int:team_id>/delete', methods=['POST'])
-def delete(team_id):
+@app.route('/v1/team/<int:team_id>/delete', methods=['POST'])
+def team_delete(team_id):
     team = Team.query.get(id=team_id)
     db_session.remove(team)
     db_session.commit()
