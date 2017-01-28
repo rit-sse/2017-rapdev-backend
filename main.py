@@ -4,6 +4,8 @@ from models import *
 from functools import wraps
 import json
 import jwt
+from sqlalchemy.exc import IntegrityError
+
 
 app = Flask(__name__)
 
@@ -52,6 +54,7 @@ def user_by_id(user_id):
         abort(404)
 
     return json.dumps(user.as_dict(include_teams_and_permissions=True))
+
 
 
 # team CRUD
@@ -112,6 +115,41 @@ def team_delete(team_id):
     db_session.commit()
 
     return '', 200
+
+if __name__ == '__main__':
+    app.run()
+
+
+@app.route('/v1/room', methods=['POST'])
+@returns_json
+def room_add():
+    '''
+    add a room, given the room number
+    '''
+    if not request.json or 'number' not in request.json:
+        abort(400)
+    num = request.json['number']
+
+    if num is None or len(num.strip()) == 0:
+        abort(400)
+
+    room = Room(number=num)
+
+    try:
+        db_session.add(room)
+        db_session.commit()
+    except IntegrityError:
+        abort(500)
+
+    return room.as_dict(include_features=False)
+
+
+# @app.route('/reservation')
+# @returns_json
+# def get_reservations():
+#     reservations =
+
+
 
 if __name__ == '__main__':
     app.run()
