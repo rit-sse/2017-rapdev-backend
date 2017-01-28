@@ -110,7 +110,7 @@ def team_delete(team_id):
     if team is None:
         abort(400)
 
-    db_session.remove(team)
+    db_session.delete(team)
     db_session.commit()
 
     return '', 200
@@ -154,7 +154,7 @@ def team_user_delete(team_id):
     if user is None:
         abort(400)
 
-    user.teams.remove(team)
+    user.teams.delete(team)
     db_session.commit()
 
     return '', 200
@@ -214,6 +214,18 @@ def room_update(room_id):
         abort(400)
 
     room.number = request.json['number']
+    features = request.json['features']
+
+    # remove relationships not in features
+    for r in room.features:
+        if r not in features:
+            room.features.delete(r)
+
+    # add relationships in features
+    for f in features:
+        if f not in room.features:
+            room.features.add(f)
+
     db_session.commit()
 
     return '', 200
@@ -227,7 +239,7 @@ def room_delete(room_id):
     if room is None:
         abort(400)
 
-    db_session.remove(room)
+    db_session.delete(room)
     db_session.commit()
 
     return '', 200
