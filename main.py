@@ -1,7 +1,7 @@
-from flask import Flask, request, abort
+from flask import Flask, request, abort, flash, redirect, url_for, render_template
 app = Flask(__name__)
 from database import db_session
-import models
+from models import *
 import json
 import jwt
 
@@ -17,27 +17,27 @@ def shutdown_session(exception=None):
 @app.route('/')
 def hello_world():
     temp = []
-    for u in models.User.query.all():
+    for u in User.query.all():
         temp.append(u.as_dict())
     return json.dumps(temp)
 
 
 @app.route('/create')
 def create():
-    u = models.User('test', 'test@')
+    u = User('test', 'test@')
     db_session.add(u)
     db_session.commit()
-    return str(models.User.query.all())
+    return str(User.query.all())
 
 
 @app.route('/api/v1/auth', methods=['POST'])
 def auth():
     username = request.form['username']
 
-    user = models.User.query.filter_by(name=username).first()
+    user = User.query.filter_by(name=username).first()
     
     if user is None:
-        user = models.User(username, username + '@')
+        user = User(username, username + '@')
         db_session.add(user)
         db_session.commit()
         
@@ -49,7 +49,7 @@ def auth():
 @app.route('/api/v1/user/<int:user_id>')
 def user_by_id(user_id):
     """Get a user by user ID."""
-    user = models.User.query.get(user_id)
+    user = User.query.get(user_id)
 
     if user is None:
         abort(404)
@@ -59,3 +59,15 @@ def user_by_id(user_id):
 
 if __name__ == '__main__':
     app.run()
+
+
+# team CRUD
+
+@app.route('/team_id/add', methods=['POST'])
+def add():
+    team = Team(request.form['title'])
+    db_session.add(team)
+    db_session.commit()
+    flash('New team was successfully created')
+
+    return 'added'
