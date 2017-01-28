@@ -59,6 +59,7 @@ if __name__ == '__main__':
 # team CRUD
 
 @app.route('/v1/team/<int:team_id>', methods=['POST'])
+@returns_json
 def team_add(team_id):
     name = request.form['name']
 
@@ -74,6 +75,7 @@ def team_add(team_id):
 
 
 @app.route('/v1/team/<int:team_id>', methods=['GET'])
+@returns_json
 def team_read(team_id):
     team = Team.query.get(id=team_id)
 
@@ -87,6 +89,7 @@ def team_read(team_id):
 
 
 @app.route('/v1/team/<int:team_id>', methods=['PUT'])
+@returns_json
 def team_update(team_id):
     team = Team.query.get(id=team_id)
 
@@ -100,6 +103,7 @@ def team_update(team_id):
 
 
 @app.route('/v1/team/<int:team_id>', methods=['DELETE'])
+@returns_json
 def team_delete(team_id):
     team = Team.query.get(id=team_id)
 
