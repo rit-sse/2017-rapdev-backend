@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Table, ForeignKey
+from sqlalchemy import Column, Integer, String, Table, ForeignKey, DateTime
 from sqlalchemy.orm import relationship
 from database import Base
 
@@ -93,6 +93,8 @@ class Team(Base):
     users = relationship('User',
                          secondary=join_table_user_teams,
                          back_populates='teams')
+    reservations = relationship('Reservation', back_populates='team')
+
 
     def __init__(self, name=None):
         self.name = name
@@ -111,6 +113,7 @@ class Room(Base):
     features = relationship('RoomFeature',
                             secondary=join_table_room_roomfeatures,
                             back_populates='rooms')
+    reservations = relationship('Reservation', back_populates='room')
 
     def __init__(self, number=None):
         self.number = number
@@ -126,3 +129,24 @@ class RoomFeature(Base):
 
     def __init__(self, name=None):
         self.name = name
+
+
+class Reservation(Base):
+    __tablename__ = 'reservations'
+    id = Column(Integer, primary_key=True)
+    team_id = Column(Integer, ForeignKey('teams.id'))
+    team = relationship('Team', back_populates='reservations')
+    room_id = Column(Integer, ForeignKey('rooms.id'))
+    room = relationship('Room', back_populates='reservations')
+    creator_id = Column(Integer, ForeignKey('users.id'))
+    created_by = relationship('User')
+    start = Column(DateTime)
+    end = Column(DateTime)
+
+    def __init__(self, start=None, end=None, team=None,
+                    room=None, created_by=None):
+        self.start = start
+        self.end = end
+        self.team = team
+        self.room = room
+        self.created_by = created_by
