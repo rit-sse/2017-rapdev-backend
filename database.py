@@ -15,3 +15,47 @@ def init_db():
     # you will have to import them first before calling init_db()
     import models
     Base.metadata.create_all(bind=engine)
+    seed()
+
+def seed():
+    import models
+    # the rooms
+    roomnumbers = ['1560', '1561', '1562', '1563', '1564',
+                   '1565', '1665', '1663', '1662', '1661', '1660']
+    for roomnumber in roomnumbers:
+        r = models.Room(number=roomnumber)
+        db_session.add(r)
+
+    # the types of team
+    db_session.add(
+        models.TeamType(
+            name='default',
+            priority=4,
+            advance_time=7*2 # 2 weeks
+    ))
+    db_session.add(
+        models.TeamType(
+            name='other_team',
+            priority=4,
+            advance_time=7*2 # 2 weeks
+    ))
+    db_session.add(
+        models.TeamType(
+            name='class',
+            priority=3,
+            advance_time=7*2 # 2 weeks
+    ))
+    db_session.add(
+        models.TeamType(
+            name='colab_class',
+            priority=2,
+            advance_time=7*2 # 2 weeks
+    ))
+    db_session.add(
+        models.TeamType(
+            name='senior_project',
+            priority=1,
+            advance_time=7*2 # 2 weeks
+    ))
+
+    db_session.commit()
