@@ -49,7 +49,7 @@ def user_by_id(user_id):
     if user is None:
         abort(404)
 
-    return json.dumps(user.as_dict())
+    return json.dumps(user.as_dict(include_teams_and_permissions=True))
 
 
 if __name__ == '__main__':
