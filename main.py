@@ -61,7 +61,7 @@ def user_by_id(user_id):
 @app.route('/v1/team/<int:team_id>', methods=['POST'])
 @returns_json
 def team_add(team_id):
-    name = request.form['name']
+    name = request.json['name']
 
     if name is None:
         abort(400)
@@ -96,7 +96,7 @@ def team_update(team_id):
     if team is None:
         abort(400)
 
-    team.name = request.form['name']
+    team.name = request.json['name']
     db_session.commit()
 
     return '', 200
@@ -125,7 +125,7 @@ def team_user_add(team_id):
     if team is None:
         abort(400)
 
-    user_id = request.form['user_id']
+    user_id = request.json['user_id']
     if user_id is None:
         abort(400)
 
@@ -146,7 +146,7 @@ def team_user_delete(team_id):
     if team is None:
         abort(400)
 
-    user_id = request.form['user_id']
+    user_id = request.json['user_id']
     if user_id is None:
         abort(400)
 
@@ -164,12 +164,14 @@ if __name__ == '__main__':
     app.run()
 
 
-@app.route('/v1/room', methods=['POST'])
+# room CRUD
+
+@app.route('/v1/room/<int:room_id>', methods=['POST'])
 @returns_json
-def room_add():
-    '''
+def room_add(room_id):
+    """
     add a room, given the room number
-    '''
+    """
     if not request.json or 'number' not in request.json:
         abort(400)
     num = request.json['number']
@@ -185,14 +187,56 @@ def room_add():
     except IntegrityError:
         abort(500)
 
-    return room.as_dict(include_features=False)
+    return '', 201
+
+
+@app.route('/v1/room/<int:room_id>', methods=['GET'])
+@returns_json
+def room_read(room_id):
+    room = Room.query.get(id=room_id)
+
+    if room is None:
+        abort(400)
+
+    return json.dumps({
+        'number': room.number,
+        'features': room.users,
+        'reservations': room.reservations,
+    })
+
+
+@app.route('/v1/room/<int:room_id>', methods=['PUT'])
+@returns_json
+def room_update(room_id):
+    room = Room.query.get(id=room_id)
+
+    if room is None:
+        abort(400)
+
+    room.number = request.json['number']
+    db_session.commit()
+
+    return '', 200
+
+
+@app.route('/v1/room/<int:room_id>', methods=['DELETE'])
+@returns_json
+def room_delete(room_id):
+    room = Room.query.get(id=room_id)
+
+    if room is None:
+        abort(400)
+
+    db_session.remove(room)
+    db_session.commit()
+
+    return '', 200
 
 
 # @app.route('/reservation')
 # @returns_json
 # def get_reservations():
 #     reservations =
-
 
 
 if __name__ == '__main__':
