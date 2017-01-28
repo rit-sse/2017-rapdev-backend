@@ -23,7 +23,7 @@ def shutdown_session(exception=None):
     db_session.remove()
 
 
-@app.route('/api/v1/auth', methods=['POST'])
+@app.route('/v1/auth', methods=['POST'])
 @returns_json
 def auth():
     username = request.form['username']
@@ -40,7 +40,7 @@ def auth():
     return json.dumps({'token': encoded})
 
 
-@app.route('/api/v1/user/<int:user_id>')
+@app.route('/v1/user/<int:user_id>')
 @returns_json
 def user_by_id(user_id):
     """Get a user by user ID."""
