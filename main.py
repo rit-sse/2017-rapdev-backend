@@ -26,7 +26,7 @@ def shutdown_session(exception=None):
 @app.route('/v1/auth', methods=['POST'])
 @returns_json
 def auth():
-    if not json or not 'username' in request.json:
+    if not json or 'username' not in request.json:
         abort(400)
     username = request.json['username']
 
@@ -112,6 +112,51 @@ def team_delete(team_id):
     db_session.commit()
 
     return '', 200
+
+
+# add/remove user to team
+
+@app.route('/v1/team_user/<int:team_id>', methods=['POST'])
+@returns_json
+def team_user_add(team_id):
+    team = Team.query.get(id=team_id)
+    if team is None:
+        abort(400)
+
+    user_id = request.form['user_id']
+    if user_id is None:
+        abort(400)
+
+    user = User.query.get(id=user_id)
+    if user is None:
+        abort(400)
+
+    user.teams.append(team)
+    db_session.commit()
+
+    return '', 200
+
+
+@app.route('/v1/team_user/<int:team_id>', methods=['DELETE'])
+@returns_json
+def team_user_delete(team_id):
+    team = Team.query.get(id=team_id)
+    if team is None:
+        abort(400)
+
+    user_id = request.form['user_id']
+    if user_id is None:
+        abort(400)
+
+    user = User.query.get(id=user_id)
+    if user is None:
+        abort(400)
+
+    user.teams.remove(team)
+    db_session.commit()
+
+    return '', 200
+
 
 if __name__ == '__main__':
     app.run()
