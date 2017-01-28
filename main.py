@@ -61,6 +61,10 @@ if __name__ == '__main__':
 @app.route('/v1/team/', methods=['POST'])
 def team_add():
     team = Team(name=request.form['name'])
+
+    if team is None:
+        abort(400)
+
     db_session.add(team)
     db_session.commit()
 
@@ -71,12 +75,19 @@ def team_add():
 def team_read(team_id):
     team = Team.query.get(id=team_id)
 
+    if team is None:
+        abort(400)
+
     return team
 
 
 @app.route('/v1/team/<int:team_id>/update', methods=['POST'])
 def team_update(team_id):
     team = Team.query.get(id=team_id)
+
+    if team is None:
+        abort(400)
+
     team.name = request.form['name']
     db_session.commit()
 
@@ -86,6 +97,10 @@ def team_update(team_id):
 @app.route('/v1/team/<int:team_id>/delete', methods=['POST'])
 def team_delete(team_id):
     team = Team.query.get(id=team_id)
+
+    if team is None:
+        abort(400)
+
     db_session.remove(team)
     db_session.commit()
 
