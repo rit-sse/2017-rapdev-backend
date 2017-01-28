@@ -74,12 +74,14 @@ class TeamType(Base):
     __tablename__ = 'teamtypes'
     id = Column(Integer, primary_key=True)
     name = Column(String(50), unique=True)
-    teams = relationship("Team", back_populates="teamtype")
+    teams = relationship('Team', back_populates='teamtype')
     priority = Column(Integer)
     advance_time = Column(Integer) # max days ahead that they can reserve a room
 
-    def __init__(self, name=None):
+    def __init__(self, name=None, priority=None, advance_time=None):
         self.name = name
+        self.priority = priority
+        self.advance_time = advance_time
 
 
 class Team(Base):
