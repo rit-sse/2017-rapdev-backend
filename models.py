@@ -26,22 +26,22 @@ class User(Base):
                          secondary=join_table_user_teams,
                          back_populates="users")
 
-
     def __init__(self, name=None, email=None):
         self.name = name
         self.email = email
 
     def as_dict(self):
-    	return {
-    		'id' : self.id,
-    		'name' : self.name,
-    		'email' : self.email
-    	}
+        return {
+            'id': self.id,
+            'name': self.name,
+            'email': self.email
+        }
 
 join_table_role_permissions = Table('role_permissions', Base.metadata,
     Column('role_id', Integer, ForeignKey('roles.id')),
     Column('permission_id', Integer, ForeignKey('permissions.id'))
 )
+
 
 class Role(Base):
     __tablename__ = 'roles'
@@ -49,8 +49,8 @@ class Role(Base):
     name = Column(String(50), unique=True)
     # 'users' defined above in class User
     permissions = relationship('Role',
-                         secondary=join_table_role_permissions,
-                         back_populates='roles')
+                               secondary=join_table_role_permissions,
+                               back_populates='roles')
 
     def __init__(self, name=None):
         self.name = name
@@ -72,7 +72,7 @@ class TeamType(Base):
     name = Column(String(50), unique=True)
     teams = relationship("Team", back_populates="teamtype")
     priority = Column(Integer)
-    advance_time = Column(Integer) # max days ahead that they can reserve a room
+    advance_time = Column(Integer)  # max days ahead that they can reserve a room
 
     def __init__(self, name=None):
         self.name = name
