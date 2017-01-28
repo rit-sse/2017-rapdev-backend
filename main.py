@@ -58,8 +58,8 @@ if __name__ == '__main__':
 
 # team CRUD
 
-@app.route('/v1/team/', methods=['POST'])
-def team_add():
+@app.route('/v1/team/<int:team_id>', methods=['POST'])
+def team_add(team_id):
     name = request.form['name']
 
     if name is None:
@@ -70,20 +70,23 @@ def team_add():
     db_session.add(team)
     db_session.commit()
 
-    return 'team added'
+    return '', 204
 
 
-@app.route('/v1/team/<int:team_id>/', methods=['GET'])
+@app.route('/v1/team/<int:team_id>', methods=['GET'])
 def team_read(team_id):
     team = Team.query.get(id=team_id)
 
     if team is None:
         abort(400)
 
-    return team
+    return json.dumps({
+        'name': team.name,
+        'members': team.users
+    })
 
 
-@app.route('/v1/team/<int:team_id>/update', methods=['POST'])
+@app.route('/v1/team/<int:team_id>', methods=['PUT'])
 def team_update(team_id):
     team = Team.query.get(id=team_id)
 
@@ -93,10 +96,10 @@ def team_update(team_id):
     team.name = request.form['name']
     db_session.commit()
 
-    return 'team added'
+    return '', 204
 
 
-@app.route('/v1/team/<int:team_id>/delete', methods=['POST'])
+@app.route('/v1/team/<int:team_id>', methods=['DELETE'])
 def team_delete(team_id):
     team = Team.query.get(id=team_id)
 
@@ -106,4 +109,4 @@ def team_delete(team_id):
     db_session.remove(team)
     db_session.commit()
 
-    return 'team removed'
+    return '', 204
