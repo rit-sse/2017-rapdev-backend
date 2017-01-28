@@ -58,7 +58,7 @@ if __name__ == '__main__':
 
 # team CRUD
 
-@app.route('/team/', methods=['POST'])
+@app.route('/v1/team/', methods=['POST'])
 def add():
     team = Team(name=request.form['name'])
     db_session.add(team)
@@ -68,7 +68,7 @@ def add():
     return 'team added'
 
 
-@app.route('/team_<int:team_id>/', methods=['GET'])
+@app.route('/v1/team_<int:team_id>/', methods=['GET'])
 def read(team_id):
     team = Team.query.get(id=team_id)
     flash('Team was successfully read')
@@ -76,7 +76,7 @@ def read(team_id):
     return team
 
 
-@app.route('/team_<int:team_id>/update', methods=['POST'])
+@app.route('/v1/team_<int:team_id>/update', methods=['POST'])
 def update(team_id):
     team = Team.query.get(id=team_id)
     team.name = request.form['name']
@@ -86,7 +86,7 @@ def update(team_id):
     return 'team added'
 
 
-@app.route('/team_<int:team_id>/delete', methods=['POST'])
+@app.route('/v1/team_<int:team_id>/delete', methods=['POST'])
 def delete(team_id):
     team = Team.query.get(id=team_id)
     db_session.remove(team)
