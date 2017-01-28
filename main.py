@@ -1,6 +1,7 @@
-from flask import Flask, request, abort
+from flask import Flask, request, abort, Response
 app = Flask(__name__)
 from database import db_session
+from functools import wraps
 import models
 import json
 import jwt
@@ -9,27 +10,19 @@ import jwt
 secret = 'secret'
 
 
+def returns_json(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        r = f(*args, **kwargs)
+        return Response(r, content_type='application/json')
+    return decorated_function
+
 @app.teardown_appcontext
 def shutdown_session(exception=None):
     db_session.remove()
 
 
-@app.route('/')
-def hello_world():
-    temp = []
-    for u in models.User.query.all():
-        temp.append(u.as_dict())
-    return json.dumps(temp)
-
-
-@app.route('/create')
-def create():
-    u = models.User('test', 'test@')
-    db_session.add(u)
-    db_session.commit()
-    return str(models.User.query.all())
-
-
+@returns_json
 @app.route('/api/v1/auth', methods=['POST'])
 def auth():
     username = request.form['username']
@@ -46,6 +39,7 @@ def auth():
     return json.dumps({'token': encoded})
 
 
+@returns_json
 @app.route('/api/v1/user/<int:user_id>')
 def user_by_id(user_id):
     """Get a user by user ID."""
@@ -55,6 +49,9 @@ def user_by_id(user_id):
         abort(404)
 
     return json.dumps(user.as_dict())
+
+
+
 
 
 if __name__ == '__main__':
