@@ -1,12 +1,21 @@
-from flask import Flask, request, abort, flash, redirect, url_for, render_template
-app = Flask(__name__)
+from flask import Flask, request, abort, flash, redirect, url_for, render_template, Response
 from database import db_session
 from models import *
+from functools import wraps
 import json
 import jwt
 
+app = Flask(__name__)
 
 secret = 'secret'
+
+
+def returns_json(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        r = f(*args, **kwargs)
+        return Response(r, content_type='application/json')
+    return decorated_function
 
 
 @app.teardown_appcontext
@@ -31,6 +40,7 @@ def create():
 
 
 @app.route('/api/v1/auth', methods=['POST'])
+@returns_json
 def auth():
     username = request.form['username']
 
@@ -47,6 +57,7 @@ def auth():
 
 
 @app.route('/api/v1/user/<int:user_id>')
+@returns_json
 def user_by_id(user_id):
     """Get a user by user ID."""
     user = User.query.get(user_id)
