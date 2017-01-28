@@ -47,7 +47,9 @@ def auth():
 @app.route('/v1/user/<int:user_id>')
 @returns_json
 def user_by_id(user_id):
-    """Get a user by user ID."""
+    """
+    Get a user by user ID.
+    """
     user = User.query.get(user_id)
 
     if user is None:
@@ -61,6 +63,9 @@ def user_by_id(user_id):
 @app.route('/v1/team/<int:team_id>', methods=['POST'])
 @returns_json
 def team_add(team_id):
+    """
+    Add a team given a team name
+    """
     name = request.json['name']
 
     if name is None:
@@ -77,6 +82,9 @@ def team_add(team_id):
 @app.route('/v1/team/<int:team_id>', methods=['GET'])
 @returns_json
 def team_read(team_id):
+    """
+    Get a team's info
+    """
     team = Team.query.get(id=team_id)
     if team is None:
         abort(400)
@@ -90,12 +98,19 @@ def team_read(team_id):
 @app.route('/v1/team/<int:team_id>', methods=['PUT'])
 @returns_json
 def team_update(team_id):
+    """
+    Update a team's name given name
+    """
     team = Team.query.get(id=team_id)
 
     if team is None:
         abort(400)
 
-    team.name = request.json['name']
+    name = request.json['name']
+    if name is None or name is '':
+        abort(400)
+
+    team.name = name
     db_session.commit()
 
     return '', 200
@@ -104,6 +119,9 @@ def team_update(team_id):
 @app.route('/v1/team/<int:team_id>', methods=['DELETE'])
 @returns_json
 def team_delete(team_id):
+    """
+    Delete a team given its id
+    """
     team = Team.query.get(id=team_id)
 
     if team is None:
@@ -120,6 +138,9 @@ def team_delete(team_id):
 @app.route('/v1/team_user/<int:team_id>', methods=['POST'])
 @returns_json
 def team_user_add(team_id):
+    """
+    Add a user to a team given the team and user ids
+    """
     team = Team.query.get(id=team_id)
     if team is None:
         abort(400)
@@ -141,6 +162,9 @@ def team_user_add(team_id):
 @app.route('/v1/team_user/<int:team_id>', methods=['DELETE'])
 @returns_json
 def team_user_delete(team_id):
+    """
+    Remove a user from a team given the team and user ids
+    """
     team = Team.query.get(id=team_id)
     if team is None:
         abort(400)
@@ -168,6 +192,9 @@ if __name__ == '__main__':
 @app.route('/v1/reservation/<int:res_id>', methods=['POST'])
 @returns_json
 def reservation_add(res_id):
+    """
+    Add a reservation given the team id, room id, creator id, start and end datetimes
+    """
     team = Team.query.get(id=request.json['team_id'])
     if team is None:
         abort(400)
@@ -199,6 +226,9 @@ def reservation_add(res_id):
 @app.route('/v1/reservation/<int:res_id>', methods=['GET'])
 @returns_json
 def reservation_read(res_id):
+    """
+    Get a reservation's info given id
+    """
     res = Reservation.query.get(id=res_id)
 
     if res is None:
@@ -216,6 +246,9 @@ def reservation_read(res_id):
 @app.route('/v1/reservation/<int:res_id>', methods=['PUT'])
 @returns_json
 def reservation_update(res_id):
+    """
+    Update a reservation given team id, room id, creator id, start and end datetimes
+    """
     team = Team.query.get(id=request.json['team_id'])
     if team is None:
         abort(400)
@@ -254,6 +287,9 @@ def reservation_update(res_id):
 @app.route('/v1/reservation/<int:res_id>', methods=['DELETE'])
 @returns_json
 def reservation_delete(res_id):
+    """
+    Remove a reservation given its id
+    """
     res = Reservation.query.get(id=res_id)
 
     if res is None:
@@ -294,6 +330,9 @@ def room_add(room_id):
 @app.route('/v1/room/<int:room_id>', methods=['GET'])
 @returns_json
 def room_read(room_id):
+    """
+    Get a room's info given its id
+    """
     room = Room.query.get(id=room_id)
 
     if room is None:
@@ -309,6 +348,9 @@ def room_read(room_id):
 @app.route('/v1/room/<int:room_id>', methods=['PUT'])
 @returns_json
 def room_update(room_id):
+    """
+    Update a room given its room number and feature array
+    """
     room = Room.query.get(id=room_id)
 
     if room is None:
@@ -335,6 +377,9 @@ def room_update(room_id):
 @app.route('/v1/room/<int:room_id>', methods=['DELETE'])
 @returns_json
 def room_delete(room_id):
+    """
+    Remove a room given its id
+    """
     room = Room.query.get(id=room_id)
 
     if room is None:
