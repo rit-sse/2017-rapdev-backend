@@ -54,3 +54,26 @@ class Permission(Base):
 
     def __init__(self, name=None):
         self.name = name
+
+
+class TeamType(Base):
+    __tablename__ = 'teamtypes'
+    id = Column(Integer, primary_key=True)
+    name = Column(String(50), unique=True)
+    teams = relationship("Team", back_populates="teamtype")
+    priority = Column(Integer)
+    advance_time = Column(Integer) # max days ahead that they can reserve a room
+
+    def __init__(self, name=None):
+        self.name = name
+
+
+class Team(Base):
+    __tablename__ = 'teams'
+    id = Column(Integer, primary_key=True)
+    name = Column(String(50), unique=True)
+    teamtype_id = Column(Integer, ForeignKey('teamtypes.id'))
+    teamtype = relationship("TeamType", back_populates="teams")
+
+    def __init__(self, name=None):
+        self.name = name
