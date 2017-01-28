@@ -73,7 +73,7 @@ def team_add(team_id):
     db_session.add(team)
     db_session.commit()
 
-    return '', 204
+    return '', 201
 
 
 @app.route('/v1/team/<int:team_id>', methods=['GET'])
@@ -101,7 +101,7 @@ def team_update(team_id):
     team.name = request.form['name']
     db_session.commit()
 
-    return '', 204
+    return '', 200
 
 
 @app.route('/v1/team/<int:team_id>', methods=['DELETE'])
@@ -115,4 +115,4 @@ def team_delete(team_id):
     db_session.remove(team)
     db_session.commit()
 
-    return '', 204
+    return '', 200
