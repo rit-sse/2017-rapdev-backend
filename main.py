@@ -22,8 +22,8 @@ def shutdown_session(exception=None):
     db_session.remove()
 
 
-@returns_json
 @app.route('/api/v1/auth', methods=['POST'])
+@returns_json
 def auth():
     username = request.form['username']
 
@@ -39,8 +39,9 @@ def auth():
     return json.dumps({'token': encoded})
 
 
-@returns_json
+
 @app.route('/api/v1/user/<int:user_id>')
+@returns_json
 def user_by_id(user_id):
     """Get a user by user ID."""
     user = models.User.query.get(user_id)
