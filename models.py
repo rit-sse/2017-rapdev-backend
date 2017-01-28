@@ -30,12 +30,26 @@ class User(Base):
         self.name = name
         self.email = email
 
-    def as_dict(self):
-        return {
-            'id': self.id,
-            'name': self.name,
-            'email': self.email
-        }
+    def as_dict(self, include_teams_and_permissions=False):
+        if include_teams_and_permissions:
+            all_permissions = []
+            for role in self.roles:
+                for permission in role.permissions:
+                    if permission not in all_permissions:
+                        all_permissions.add(permission)
+            return {
+                'id': self.id,
+                'name': self.name,
+                'email': self.email,
+                'teams': self.teams,
+                'permissions': all_permissions
+            }
+        else:
+            return {
+                'id': self.id,
+                'name': self.name,
+                'email': self.email
+            }
 
 join_table_role_permissions = Table('role_permissions', Base.metadata,
     Column('role_id', Integer, ForeignKey('roles.id')),
