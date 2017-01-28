@@ -23,35 +23,19 @@ def shutdown_session(exception=None):
     db_session.remove()
 
 
-@app.route('/')
-def hello_world():
-    temp = []
-    for u in User.query.all():
-        temp.append(u.as_dict())
-    return json.dumps(temp)
-
-
-@app.route('/create')
-def create():
-    u = User('test', 'test@')
-    db_session.add(u)
-    db_session.commit()
-    return str(User.query.all())
-
-
 @app.route('/api/v1/auth', methods=['POST'])
 @returns_json
 def auth():
     username = request.form['username']
 
     user = User.query.filter_by(name=username).first()
-    
+
     if user is None:
         user = User(username, username + '@')
         db_session.add(user)
         db_session.commit()
-        
-    encoded = jwt.encode({'id': user.id}, secret, algorithm='HS256') 
+
+    encoded = jwt.encode({'id': user.id}, secret, algorithm='HS256')
 
     return json.dumps({'token': encoded})
 
