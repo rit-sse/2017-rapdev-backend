@@ -78,7 +78,6 @@ def team_add(team_id):
 @returns_json
 def team_read(team_id):
     team = Team.query.get(id=team_id)
-
     if team is None:
         abort(400)
 
@@ -162,6 +161,108 @@ def team_user_delete(team_id):
 
 if __name__ == '__main__':
     app.run()
+
+
+# reservation CRUD
+
+@app.route('/v1/reservation/<int:res_id>', methods=['POST'])
+@returns_json
+def reservation_add(res_id):
+    team = Team.query.get(id=request.json['team_id'])
+    if team is None:
+        abort(400)
+
+    room = Room.query.get(id=request.json['room_id'])
+    if room is None:
+        abort(400)
+
+    creator = User.query.get(id=request.json['creator_id'])
+    if creator is None:
+        abort(400)
+
+    start = request.json['start']
+    if start is None:
+        abort(400)
+
+    end = request.json['end']
+    if end is None:
+        abort(400)
+
+    res = Reservation(team=team, room=room, created_by=creator, start=start, end=end)
+
+    db_session.add(res)
+    db_session.commit()
+
+    return '', 201
+
+
+@app.route('/v1/reservation/<int:res_id>', methods=['GET'])
+@returns_json
+def reservation_read(res_id):
+    res = Reservation.query.get(id=res_id)
+
+    if res is None:
+        abort(400)
+
+    return json.dumps({
+        'team': res.team,
+        'room': res.room,
+        'created_by': res.created_by,
+        'start': res.start,
+        'end': res.end
+    })
+
+
+@app.route('/v1/reservation/<int:res_id>', methods=['PUT'])
+@returns_json
+def reservation_update(res_id):
+    team = Team.query.get(id=request.json['team_id'])
+    if team is None:
+        abort(400)
+
+    room = Room.query.get(id=request.json['room_id'])
+    if room is None:
+        abort(400)
+
+    creator = User.query.get(id=request.json['creator_id'])
+    if creator is None:
+        abort(400)
+
+    start = request.json['start']
+    if start is None:
+        abort(400)
+
+    end = request.json['end']
+    if end is None:
+        abort(400)
+
+    res = Reservation.query.get(id=res_id)
+    if res is None:
+        abort(400)
+
+    res.team = team
+    res.room = room
+    res.created_by = creator
+    res.start = start
+    res.end = end
+
+    db_session.commit()
+
+    return '', 200
+
+
+@app.route('/v1/reservation/<int:res_id>', methods=['DELETE'])
+@returns_json
+def reservation_delete(res_id):
+    res = Reservation.query.get(id=res_id)
+
+    if res is None:
+        abort(400)
+
+    db_session.delete(res)
+    db_session.commit()
+
+    return '', 200
 
 
 # room CRUD
