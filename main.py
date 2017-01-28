@@ -1,4 +1,4 @@
-from flask import Flask, request
+from flask import Flask, request, abort
 app = Flask(__name__)
 from database import db_session
 import models
@@ -41,6 +41,17 @@ def auth():
     encoded = jwt.encode({'id': user.id}, secret, algorithm='HS256') 
 
     return json.dumps({'token': encoded})
+
+
+@app.route('/api/v1/user/<int:user_id>')
+def user_by_id(user_id):
+    """Get a user by user ID."""
+    user = models.User.query.get(user_id)
+
+    if user is None:
+        abort(404)
+
+    return json.dumps(user.as_dict())
 
 
 if __name__ == '__main__':
