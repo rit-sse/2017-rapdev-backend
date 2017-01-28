@@ -1,4 +1,4 @@
-from flask import Flask, request, abort, flash, redirect, url_for, render_template, Response
+from flask import Flask, request, abort, redirect, url_for, Response
 from database import db_session
 from models import *
 from functools import wraps
@@ -63,7 +63,6 @@ def add():
     team = Team(name=request.form['name'])
     db_session.add(team)
     db_session.commit()
-    flash('New team was successfully created')
 
     return 'team added'
 
@@ -71,7 +70,6 @@ def add():
 @app.route('/v1/team_<int:team_id>/', methods=['GET'])
 def read(team_id):
     team = Team.query.get(id=team_id)
-    flash('Team was successfully read')
 
     return team
 
@@ -81,7 +79,6 @@ def update(team_id):
     team = Team.query.get(id=team_id)
     team.name = request.form['name']
     db_session.commit()
-    flash('Team was successfully updated')
 
     return 'team added'
 
@@ -91,6 +88,5 @@ def delete(team_id):
     team = Team.query.get(id=team_id)
     db_session.remove(team)
     db_session.commit()
-    flash('Team was successfully removed')
 
     return 'team removed'
