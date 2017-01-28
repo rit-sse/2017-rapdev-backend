@@ -8,6 +8,12 @@ join_table_user_roles = Table('user_roles', Base.metadata,
     Column('role_id', Integer, ForeignKey('roles.id'))
 )
 
+join_table_user_teams = Table('user_teams', Base.metadata,
+    Column('user_id', Integer, ForeignKey('users.id')),
+    Column('team_id', Integer, ForeignKey('teams.id'))
+)
+
+
 class User(Base):
     __tablename__ = 'users'
     id = Column(Integer, primary_key=True)
@@ -16,6 +22,10 @@ class User(Base):
     roles = relationship('Role',
                          secondary=join_table_user_roles,
                          back_populates="users")
+    teams = relationship('Team',
+                         secondary=join_table_user_teams,
+                         back_populates="users")
+
 
     def __init__(self, name=None, email=None):
         self.name = name
@@ -74,6 +84,7 @@ class Team(Base):
     name = Column(String(50), unique=True)
     teamtype_id = Column(Integer, ForeignKey('teamtypes.id'))
     teamtype = relationship("TeamType", back_populates="teams")
+    # 'users' defined in class User
 
     def __init__(self, name=None):
         self.name = name
