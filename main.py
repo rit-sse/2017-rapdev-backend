@@ -60,10 +60,12 @@ if __name__ == '__main__':
 
 @app.route('/v1/team/', methods=['POST'])
 def team_add():
-    team = Team(name=request.form['name'])
+    name = request.form['name']
 
-    if team is None:
+    if name is None:
         abort(400)
+
+    team = Team(name=name)
 
     db_session.add(team)
     db_session.commit()
