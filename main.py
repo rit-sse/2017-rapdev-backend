@@ -6,12 +6,13 @@ import json
 import jwt
 
 
-
 secret = 'secret'
+
 
 @app.teardown_appcontext
 def shutdown_session(exception=None):
     db_session.remove()
+
 
 @app.route('/')
 def hello_world():
@@ -20,16 +21,18 @@ def hello_world():
         temp.append(u.as_dict())
     return json.dumps(temp)
 
+
 @app.route('/create')
 def create():
-    u = models.User('test','test@')
+    u = models.User('test', 'test@')
     db_session.add(u)
     db_session.commit()
     return str(models.User.query.all())
 
+
 @app.route('/api/v1/auth', methods=['POST'])
 def auth():
-    username=request.form['username']
+    username = request.form['username']
 
     user = models.User.query.filter_by(name=username).first()
     
