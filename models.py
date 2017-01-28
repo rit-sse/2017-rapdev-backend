@@ -26,22 +26,22 @@ class User(Base):
                          secondary=join_table_user_teams,
                          back_populates="users")
 
-
     def __init__(self, name=None, email=None):
         self.name = name
         self.email = email
 
     def as_dict(self):
-    	return {
-    		'id' : self.id,
-    		'name' : self.name,
-    		'email' : self.email
-    	}
+        return {
+            'id': self.id,
+            'name': self.name,
+            'email': self.email
+        }
 
 join_table_role_permissions = Table('role_permissions', Base.metadata,
     Column('role_id', Integer, ForeignKey('roles.id')),
     Column('permission_id', Integer, ForeignKey('permissions.id'))
 )
+
 
 class Role(Base):
     __tablename__ = 'roles'
@@ -107,9 +107,8 @@ class Room(Base):
     id = Column(Integer, primary_key=True)
     number = Column(String(50), unique=True)
     features = relationship('RoomFeature',
-                         secondary=join_table_room_roomfeatures,
-                         back_populates='rooms')
-
+                            secondary=join_table_room_roomfeatures,
+                            back_populates='rooms')
 
     def __init__(self, number=None):
         self.number = number
