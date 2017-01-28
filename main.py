@@ -54,10 +54,6 @@ def user_by_id(user_id):
     return json.dumps(user.as_dict(include_teams_and_permissions=True))
 
 
-if __name__ == '__main__':
-    app.run()
-
-
 # team CRUD
 
 @app.route('/v1/team/<int:team_id>', methods=['POST'])
@@ -116,3 +112,6 @@ def team_delete(team_id):
     db_session.commit()
 
     return '', 200
+
+if __name__ == '__main__':
+    app.run()
