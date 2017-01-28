@@ -26,31 +26,33 @@ class User(Base):
                          secondary=join_table_user_teams,
                          back_populates="users")
 
+
     def __init__(self, name=None, email=None):
         self.name = name
         self.email = email
 
     def as_dict(self):
-        return {
-            'id': self.id,
-            'name': self.name,
-            'email': self.email
-        }
+    	return {
+    		'id' : self.id,
+    		'name' : self.name,
+    		'email' : self.email
+    	}
 
 join_table_role_permissions = Table('role_permissions', Base.metadata,
     Column('role_id', Integer, ForeignKey('roles.id')),
     Column('permission_id', Integer, ForeignKey('permissions.id'))
 )
 
-
 class Role(Base):
     __tablename__ = 'roles'
     id = Column(Integer, primary_key=True)
     name = Column(String(50), unique=True)
-    # 'users' defined above in class User
-    permissions = relationship('Role',
-                               secondary=join_table_role_permissions,
-                               back_populates='roles')
+    users = relationship('User',
+                         secondary=join_table_user_roles,
+                         back_populates='roles')
+    permissions = relationship('Permission',
+                         secondary=join_table_role_permissions,
+                         back_populates='roles')
 
     def __init__(self, name=None):
         self.name = name
@@ -60,7 +62,9 @@ class Permission(Base):
     __tablename__ = 'permissions'
     id = Column(Integer, primary_key=True)
     name = Column(String(50), unique=True)
-    # 'roles' defined above in class Role
+    roles = relationship('Role',
+                         secondary=join_table_role_permissions,
+                         back_populates='permissions')
 
     def __init__(self, name=None):
         self.name = name
@@ -72,7 +76,7 @@ class TeamType(Base):
     name = Column(String(50), unique=True)
     teams = relationship("Team", back_populates="teamtype")
     priority = Column(Integer)
-    advance_time = Column(Integer)  # max days ahead that they can reserve a room
+    advance_time = Column(Integer) # max days ahead that they can reserve a room
 
     def __init__(self, name=None):
         self.name = name
@@ -84,7 +88,40 @@ class Team(Base):
     name = Column(String(50), unique=True)
     teamtype_id = Column(Integer, ForeignKey('teamtypes.id'))
     teamtype = relationship("TeamType", back_populates="teams")
-    # 'users' defined in class User
+    users = relationship('User',
+                         secondary=join_table_user_teams,
+                         back_populates='teams')
+
+    def __init__(self, name=None):
+        self.name = name
+
+
+join_table_room_roomfeatures = Table('room_roomfeatures', Base.metadata,
+    Column('room_id', Integer, ForeignKey('rooms.id')),
+    Column('roomfeature_id', Integer, ForeignKey('roomfeatures.id'))
+)
+
+
+class Room(Base):
+    __tablename__ = 'rooms'
+    id = Column(Integer, primary_key=True)
+    number = Column(String(50), unique=True)
+    features = relationship('RoomFeature',
+                         secondary=join_table_room_roomfeatures,
+                         back_populates='rooms')
+
+
+    def __init__(self, number=None):
+        self.number = number
+
+
+class RoomFeature(Base):
+    __tablename__ = 'roomfeatures'
+    id = Column(Integer, primary_key=True)
+    name = Column(String(50), unique=True)
+    rooms = relationship('Room',
+                         secondary=join_table_room_roomfeatures,
+                         back_populates='features')
 
     def __init__(self, name=None):
         self.name = name
