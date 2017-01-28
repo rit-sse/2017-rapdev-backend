@@ -132,6 +132,19 @@ class Room(Base):
     def __init__(self, number=None):
         self.number = number
 
+    def as_dict(self, include_features=False):
+        if include_features:
+            return {
+                'id': self.id,
+                'number': self.number,
+                'features': self.features,
+            }
+        else:
+            return {
+                'id': self.id,
+                'number': self.number
+            }
+
 
 class RoomFeature(Base):
     __tablename__ = 'roomfeatures'
