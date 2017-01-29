@@ -1,4 +1,4 @@
-from flask import Flask, request, abort, redirect, url_for, Response
+from flask import Flask, request, abort, Response
 from database import db_session
 from models import *
 from functools import wraps
@@ -34,7 +34,7 @@ def shutdown_session(exception=None):
 @app.route('/v1/auth', methods=['POST'])
 @returns_json
 def auth():
-    if not request.json or not 'username' in request.json:
+    if not request.json or 'username' not in request.json:
         abort(400)
     username = request.json['username']
 
@@ -328,7 +328,7 @@ def reservation_delete(res_id):
 
 @app.route('/v1/room', methods=['POST'])
 @returns_json
-def room_add(room_id):
+def room_add():
     """
     add a room, given the room number
     """
@@ -416,14 +416,15 @@ def room_delete(room_id):
 
     return '', 200
 
+
 @app.route('/v1/reservation', methods=['GET'])
 @returns_json
 def get_reservations():
-    '''
+    """
     get filtered reservation list
     optional params start, end
     :return: list of reservations
-    '''
+    """
 
     start_date = request.args.get('start')
     end_date = request.args.get('end')
