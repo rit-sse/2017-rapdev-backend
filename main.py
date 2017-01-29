@@ -5,6 +5,9 @@ from functools import wraps
 import json
 import jwt
 from sqlalchemy.exc import IntegrityError
+from sqlalchemy import or_
+import datetime
+import iso8601
 
 
 app = Flask(__name__)
@@ -16,7 +19,10 @@ def returns_json(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
         r = f(*args, **kwargs)
-        return Response(r, content_type='application/json')
+        if isinstance(r, tuple):
+            return Response(r[0], status=r[1], content_type='application/json')
+        else:
+            return Response(r, content_type='application/json')
     return decorated_function
 
 
@@ -182,10 +188,6 @@ def team_user_delete(team_id):
     return '', 200
 
 
-if __name__ == '__main__':
-    app.run()
-
-
 # reservation CRUD
 
 @app.route('/v1/reservation/<int:res_id>', methods=['POST'])
@@ -342,9 +344,8 @@ def room_add(room_id):
         db_session.add(room)
         db_session.commit()
     except IntegrityError:
-        abort(500)
-
-    return '', 201
+        abort(400)
+    return json.dumps(room.as_dict(include_features=False)), 201
 
 
 @app.route('/v1/room/<int:room_id>', methods=['GET'])
@@ -415,11 +416,36 @@ def room_delete(room_id):
 
     return '', 200
 
+@app.route('/v1/reservation', methods=['GET'])
+@returns_json
+def get_reservations():
+    '''
+    get filtered reservation list
+    optional params start, end
+    :return: list of reservations
+    '''
 
-# @app.route('/reservation')
-# @returns_json
-# def get_reservations():
-#     reservations =
+    start_date = request.args.get('start')
+    end_date = request.args.get('end')
+
+    if start_date is not None and end_date is not None:
+        start = None
+        end = None
+
+        try:
+            start = iso8601.parse_date(start_date)
+            end = iso8601.parse_date(end_date)
+        except iso8601.ParseError:
+            abort(400)
+
+        reservations = Reservation.query.filter(Reservation.end >= start, Reservation.start <= end)
+    else:
+        reservations = Reservation.query.filter(or_(Reservation.start >= datetime.datetime.now(),
+                                                Reservation.end >= datetime.datetime.now()))
+
+    reservations = map(lambda x: x.as_dict(), reservations)
+
+    return json.dumps(reservations)
 
 
 if __name__ == '__main__':

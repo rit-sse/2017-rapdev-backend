@@ -177,3 +177,22 @@ class Reservation(Base):
         self.team = team
         self.room = room
         self.created_by = created_by
+
+    def as_dict(self):
+        return {
+            'id': self.id,
+            'team': {
+                'id': self.team_id,
+                'name': self.team.name
+            },
+            'room': {
+                'id': self.room_id,
+                'number': self.room.number
+            },
+            'creator': {
+                'id': self.creator_id,
+                'name': self.created_by.name
+            },
+            'start': self.start,
+            'end': self.end
+        }
