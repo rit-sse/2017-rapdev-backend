@@ -15,6 +15,8 @@ join_table_user_teams = Table('user_teams', Base.metadata,
 
 
 class User(Base):
+    """Single user of the system."""
+
     __tablename__ = 'users'
     id = Column(Integer, primary_key=True)
     name = Column(String(50), unique=True)
@@ -27,10 +29,15 @@ class User(Base):
                          back_populates="users")
 
     def __init__(self, name=None, email=None):
+        """Create a user."""
         self.name = name
         self.email = email
 
     def as_dict(self, include_teams_and_permissions=False):
+        """Get the user as a dictionary.
+
+        Optionally includes the user's teams and permissions.
+        """
         if include_teams_and_permissions:
             all_permissions = []
             for role in self.roles:
@@ -58,6 +65,11 @@ join_table_role_permissions = Table('role_permissions', Base.metadata,
 
 
 class Role(Base):
+    """Role for a user.
+
+    Examples: Student
+    """
+
     __tablename__ = 'roles'
     id = Column(Integer, primary_key=True)
     name = Column(String(50), unique=True)
@@ -65,14 +77,17 @@ class Role(Base):
                          secondary=join_table_user_roles,
                          back_populates='roles')
     permissions = relationship('Permission',
-                         secondary=join_table_role_permissions,
-                         back_populates='roles')
+                               secondary=join_table_role_permissions,
+                               back_populates='roles')
 
     def __init__(self, name=None):
+        """Create a role."""
         self.name = name
 
 
 class Permission(Base):
+    """Permission for a role."""
+
     __tablename__ = 'permissions'
     id = Column(Integer, primary_key=True)
     name = Column(String(50), unique=True)
@@ -81,24 +96,31 @@ class Permission(Base):
                          back_populates='permissions')
 
     def __init__(self, name=None):
+        """Create a permission."""
         self.name = name
 
 
 class TeamType(Base):
+    """Type of team."""
+
     __tablename__ = 'teamtypes'
     id = Column(Integer, primary_key=True)
     name = Column(String(50), unique=True)
     teams = relationship('Team', back_populates='teamtype')
     priority = Column(Integer)
-    advance_time = Column(Integer) # max days ahead that they can reserve a room
+    # max days ahead that they can reserve a room
+    advance_time = Column(Integer)
 
     def __init__(self, name=None, priority=None, advance_time=None):
+        """Create a type of team."""
         self.name = name
         self.priority = priority
         self.advance_time = advance_time
 
 
 class Team(Base):
+    """Team of users."""
+
     __tablename__ = 'teams'
     id = Column(Integer, primary_key=True)
     name = Column(String(50), unique=True)
@@ -109,8 +131,8 @@ class Team(Base):
                          back_populates='teams')
     reservations = relationship('Reservation', back_populates='team')
 
-
     def __init__(self, name=None):
+        """Create a team."""
         self.name = name
 
 
@@ -121,6 +143,8 @@ join_table_room_roomfeatures = Table('room_roomfeatures', Base.metadata,
 
 
 class Room(Base):
+    """Room."""
+
     __tablename__ = 'rooms'
     id = Column(Integer, primary_key=True)
     number = Column(String(50), unique=True)
@@ -130,9 +154,14 @@ class Room(Base):
     reservations = relationship('Reservation', back_populates='room')
 
     def __init__(self, number=None):
+        """Create a room."""
         self.number = number
 
     def as_dict(self, include_features=False):
+        """Get the room as a dictionary.
+
+        Optionally include the features of the room.
+        """
         if include_features:
             return {
                 'id': self.id,
@@ -147,6 +176,8 @@ class Room(Base):
 
 
 class RoomFeature(Base):
+    """Features of a room."""
+
     __tablename__ = 'roomfeatures'
     id = Column(Integer, primary_key=True)
     name = Column(String(50), unique=True)
@@ -155,10 +186,13 @@ class RoomFeature(Base):
                          back_populates='features')
 
     def __init__(self, name=None):
+        """Create a feature for a room."""
         self.name = name
 
 
 class Reservation(Base):
+    """Reservation for a room and team."""
+
     __tablename__ = 'reservations'
     id = Column(Integer, primary_key=True)
     team_id = Column(Integer, ForeignKey('teams.id'))
@@ -171,9 +205,30 @@ class Reservation(Base):
     end = Column(DateTime)
 
     def __init__(self, start=None, end=None, team=None,
-                    room=None, created_by=None):
+                 room=None, created_by=None):
+        """Create a reservation."""
         self.start = start
         self.end = end
         self.team = team
         self.room = room
         self.created_by = created_by
+
+    def as_dict(self):
+        """Get the reservation as a dictionary."""
+        return {
+            'id': self.id,
+            'team': {
+                'id': self.team_id,
+                'name': self.team.name
+            },
+            'room': {
+                'id': self.room_id,
+                'number': self.room.number
+            },
+            'creator': {
+                'id': self.creator_id,
+                'name': self.created_by.name
+            },
+            'start': self.start,
+            'end': self.end
+        }
