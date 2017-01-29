@@ -34,8 +34,8 @@ class User(Base):
         self.email = email
 
     def as_dict(self, include_teams_and_permissions=False):
-        """Get the user as a dictionary.
-
+        """
+        Get the user as a dictionary.
         Optionally includes the user's teams and permissions.
         """
         if include_teams_and_permissions:
@@ -65,8 +65,8 @@ join_table_role_permissions = Table('role_permissions', Base.metadata,
 
 
 class Role(Base):
-    """Role for a user.
-
+    """
+    Role for a user.
     Examples: Student
     """
 
@@ -158,8 +158,8 @@ class Room(Base):
         self.number = number
 
     def as_dict(self, include_features=False):
-        """Get the room as a dictionary.
-
+        """
+        Get the room as a dictionary.
         Optionally include the features of the room.
         """
         if include_features:
