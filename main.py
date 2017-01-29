@@ -45,7 +45,7 @@ def includes_user(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
         if 'Authorization' not in request.headers or \
-            not request.headers['Authorization'].startswith('Bearer '):
+                not request.headers['Authorization'].startswith('Bearer '):
             abort(401)
         else:
             token = request.headers['Authorization'][len('Bearer '):]
@@ -58,11 +58,20 @@ def includes_user(f):
 
 
 def json_param_exists(param_name, json_root=-1):
+    """Check if the given parameter exists and is valid.
+
+    If a json_root is included, check within that. Otherwise, use request.json.
+    Checks:
+    - Is the json_root "Truthy" (not None, not blank, etc.)?
+    - Is the parameter name in the json_root?
+    - Is the value not None?
+    """
     if json_root == -1:
         json_root = request.json
     return json_root and \
-           param_name in json_root and \
-           json_root[param_name] is not None
+        param_name in json_root and \
+        json_root[param_name] is not None
+
 
 @app.teardown_appcontext
 def shutdown_session(exception=None):
@@ -110,8 +119,8 @@ def user_read(user_id):
 def team_add(token_user):
     """Add a team given a team name."""
     if not json_param_exists('name') or \
-       not json_param_exists('type'):
-       abort(400)
+            not json_param_exists('type'):
+        abort(400)
     name = request.json['name']
     team_type = TeamType.query.filter_by(name=request.json['type']).first()
     if not team_type:
@@ -119,9 +128,9 @@ def team_add(token_user):
 
     if team_type.name == 'other_team':
         if not token_user.has_permission('team.create') and \
-            not token_user.has_permission('team.create.elevated'):
+                not token_user.has_permission('team.create.elevated'):
             abort(403)
-    else: # creating any team other than 'other_team' requires elevated
+    else:  # creating any team other than 'other_team' requires elevated
         if not token_user.has_permission('team.create.elevated'):
             abort(403)
 
@@ -129,7 +138,7 @@ def team_add(token_user):
     team.team_type = team_type
 
     get_db().add(team)
-     # TODO if unique check on name fails this will throw an exception
+    # TODO if unique check on name fails this will throw an exception
     get_db().commit()
 
     return '', 201
@@ -165,7 +174,7 @@ def team_update(team_id):
 
     # TODO ensure the user is permitted to modify this team
 
-    name = request.json['name'] # TODO change this to json_param_exists
+    name = request.json['name']  # TODO change this to json_param_exists
     if name is None or len(name.strip()) == 0:
         abort(400)
 
@@ -253,7 +262,7 @@ def reservation_add():
        not json_param_exists('created_by_id') or \
        not json_param_exists('start') or \
        not json_param_exists('end'):
-       abort(400)
+        abort(400)
 
     team_id = request.json['team_id']
     team = Team.query.get(team_id)
@@ -313,7 +322,7 @@ def reservation_update(token_user, res_id):
     if not json_param_exists('room_id') or \
        not json_param_exists('start') or \
        not json_param_exists('end'):
-       abort(400)
+        abort(400)
 
     room_id = request.json['room_id']
     room = Room.query.get(room_id)

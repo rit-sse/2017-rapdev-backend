@@ -5,13 +5,15 @@ from sqlalchemy.orm import scoped_session, sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
 import os
 
+
 def init_engine():
-    """Returns a initilized engine based on the running environment."""
+    """Return a initilized engine based on the running environment."""
     if os.getenv('PRODUCTION', False):
         USER = os.getenv('PG_ENV_POSTGRES_USER', 'postgres')
         DB = os.getenv('PG_ENV_POSTGRES_DB', USER)
         PASS = os.getenv('PG_ENV_POSTGRES_PASSWORD')
-        return create_engine('postgres://' + USER + ':' + PASS + '@pg:5432/' + DB)
+        return create_engine(
+            'postgres://' + USER + ':' + PASS + '@pg:5432/' + DB)
     else:
         return create_engine('sqlite:///test.db', convert_unicode=True)
 
@@ -208,7 +210,7 @@ def seed():
             r.permissions.append(p)
         get_db().add(r)
         # seed a user TODO don't do this in production?
-        u = models.User(name=role, email=role+"@example.com")
+        u = models.User(name=role, email=role + "@example.com")
         u.roles.append(r)
         get_db().add(u)
 
