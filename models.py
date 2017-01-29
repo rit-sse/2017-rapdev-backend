@@ -38,7 +38,6 @@ class User(Base):
         self.name = name
         self.email = email
 
-
     def generate_auth_token(self):
         return jwt.encode({'id': self.id}, secret, algorithm='HS256')
 
