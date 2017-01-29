@@ -131,22 +131,29 @@ def team_read(team_id):
     if team is None:
         abort(404)
 
+    # TODO if this user does not have permission to read the team, only give
+    # the team type
     return json.dumps({
+        # TODO add team type's name
         'name': team.name,
+        # TODO make each member into a {"name": "...", "id", 100} type dict
         'members': team.members
     })
 
 
 @app.route('/v1/team/<int:team_id>', methods=['PUT'])
 @returns_json
+# TODO make this accept a user
 def team_update(team_id):
     """Update a team's name given name."""
     team = Team.query.get(team_id)
 
     if team is None:
-        abort(400)
+        abort(404)
 
-    name = request.json['name']
+    # TODO ensure the user is permitted to modify this team
+
+    name = request.json['name'] # TODO change this to json_param_exists
     if name is None or len(name.strip()) == 0:
         abort(400)
 
@@ -158,11 +165,15 @@ def team_update(team_id):
 
 @app.route('/v1/team/<int:team_id>', methods=['DELETE'])
 @returns_json
+# TODO make this accept a user
 def team_delete(team_id):
     """Delete a team given its ID."""
     team = Team.query.get(team_id)
     if team is None:
-        abort(400)
+        abort(404)
+
+    # TODO ensure the user is permitted to delete this team
+    # TODO deschedule any reservations this team
 
     get_db().delete(team)
     get_db().commit()
