@@ -99,7 +99,7 @@ def auth():
     return json.dumps({'token': encoded})
 
 
-@app.route('/v1/user/<int:user_id>')
+@app.route('/v1/user/<int:user_id>', methods=['GET'])
 @returns_json
 def user_read(user_id):
     """Get a user by user ID."""
@@ -109,6 +109,22 @@ def user_read(user_id):
         abort(404, "user not found")
 
     return json.dumps(user.as_dict(include_teams_and_permissions=True))
+
+
+@app.route('/v1/user/<string:user_name>', methods=['GET'])
+@returns_json
+def user_search_partial(user_name):
+    """Get a user id from a partial user name."""
+    if len(user_name) < 1:
+        abort(400, "no user name supplied")
+
+    ret = []
+    for user in User.query.filter(User.name.like(user_name + "%")):
+        ret.append({
+            "id": user.id,
+            "name": user.name
+        })
+    return json.dumps(ret)
 
 
 # team CRUD
