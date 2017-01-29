@@ -5,6 +5,9 @@ This document contains definitions for the backend API.
 ## Authentication
 
 ### POST `/api/v1/auth`
+
+Generates a token for the supplied user.
+
 #### Body
 ```json
 {
@@ -19,9 +22,16 @@ This document contains definitions for the backend API.
 }
 ```
 
+#### Notes
+
+If a user is not found with the supplied username, a new one is created. Password is ignored.
+Token is jwt-encoded, with a payload that contains the user's id in the `id` field, ex. `{"id": 1002}`.
+
 ## Users
 
 ### GET `/api/v1/user/:user_id`
+
+Reads information about a supplied user.
 
 #### Response
 ```json
@@ -30,10 +40,36 @@ This document contains definitions for the backend API.
     "name": "Jenny",
     "email": "jenny@example.com",
     "teams": [
-        ...
+        {
+            ..
+        }
     ],
     "permissions": [
-        ...
+        "team.create",
+        "..."
     ]
 }
 ```
+
+## Teams
+
+### POST `/api/v1/team`
+
+Creates a team.
+
+#### Body
+
+```json
+{
+    "name": "teamname",
+    "type": "student"
+}
+```
+
+The value of `type` _must_ be either `"student"`, `"other_team"`, `"class"`, `"colab_class"`, or `"senior_project"`.
+
+#### Response
+
+On success, returns status code `201 Created` with no body.
+
+On insufficient permissions, status code `403 Forbidden`.

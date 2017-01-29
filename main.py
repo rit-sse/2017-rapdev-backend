@@ -117,6 +117,7 @@ def team_add(token_user):
     team.team_type = team_type
 
     get_db().add(team)
+     # TODO if unique check on name fails this will throw an exception
     get_db().commit()
 
     return '', 201
