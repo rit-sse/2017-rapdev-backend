@@ -3,11 +3,30 @@ from sqlalchemy.orm import scoped_session, sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
 
 engine = create_engine('sqlite:///test.db', convert_unicode=True)
-db_session = scoped_session(sessionmaker(autocommit=False,
+_db_session = scoped_session(sessionmaker(autocommit=False,
                                          autoflush=False,
                                          bind=engine))
 Base = declarative_base()
-Base.query = db_session.query_property()
+Base.query = _db_session.query_property()
+
+def get_db():
+    """
+    Returns the current db session
+    """
+    return _db_session
+
+def set_engine(new_querystring):
+    """
+    Swaps the current sqlite database location to the new destination.
+    FOR TESTING ONLY!
+    """
+    global engine, _db_session
+    engine = create_engine(new_querystring, convert_unicode=True)
+    _db_session = scoped_session(
+        sessionmaker(autocommit=False, autoflush=False, bind=engine)
+    )
+    Base.query = _db_session.query_property()
+
 
 def init_db():
     # import all modules here that might define models so that
@@ -24,38 +43,38 @@ def seed():
                    '1565', '1665', '1663', '1662', '1661', '1660']
     for roomnumber in roomnumbers:
         r = models.Room(number=roomnumber)
-        db_session.add(r)
+        get_db().add(r)
 
     # the types of team
-    db_session.add(
+    get_db().add(
         models.TeamType(
             name='default',
             priority=4,
             advance_time=7*2 # 2 weeks
     ))
-    db_session.add(
+    get_db().add(
         models.TeamType(
             name='other_team',
             priority=4,
             advance_time=7*2 # 2 weeks
     ))
-    db_session.add(
+    get_db().add(
         models.TeamType(
             name='class',
             priority=3,
             advance_time=7*2 # 2 weeks
     ))
-    db_session.add(
+    get_db().add(
         models.TeamType(
             name='colab_class',
             priority=2,
             advance_time=7*2 # 2 weeks
     ))
-    db_session.add(
+    get_db().add(
         models.TeamType(
             name='senior_project',
             priority=1,
             advance_time=7*2 # 2 weeks
     ))
 
-    db_session.commit()
+    get_db().commit()
