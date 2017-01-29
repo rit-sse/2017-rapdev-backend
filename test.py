@@ -230,6 +230,8 @@ class TestCase(unittest.TestCase):
         database.get_db().add(team)
         database.get_db().commit()
 
+        team_id = team.id
+
         room = Room.query.first()
 
         rv = self.app.post(
@@ -248,6 +250,100 @@ class TestCase(unittest.TestCase):
 
         num_reservations_after = len(Reservation.query.all())
         self.assertEquals(rv.status_code, 201)
+        self.assertEquals(len(Reservation.query.filter_by(team_id=team_id).all()), 1)
+        self.assertEquals(num_reservations_after - num_reservations_before, 1)
+
+    def test_add_reservation_conflict_override(self):
+        """Create a reservation, and then override it. """
+        num_reservations_before = len(Reservation.query.all())
+        self.assertEquals(num_reservations_before, 0)  # This will fail if we seed reservations.
+        student = User.query.filter_by(name='student').first()
+        student_auth_token = student.generate_auth_token()
+        room = Room.query.first()
+
+        team_type = TeamType.query.filter_by(name='other_team').first()
+        initial_team = Team(name="other_team_1")
+        initial_team.team_type = team_type
+        initial_team.members.append(student)
+        database.get_db().add(initial_team)
+
+        team_type = TeamType.query.filter_by(name='senior_project').first()
+        override_team = Team(name="senior_project_1")
+        override_team.team_type = team_type
+        override_team.members.append(student)
+        database.get_db().add(override_team)
+
+        database.get_db().commit()
+
+        initial_team_id = initial_team.id
+        override_team_id = override_team.id
+        room_id = room.id
+
+        start_time = "2017-12-25T12:30:00+05:00"  # datetime.datetime.now().isoformat()
+        end_time = "2017-12-25T13:30:00+05:00" # (datetime.datetime.now() + datetime.timedelta(hours=1)).isoformat()
+
+        # Create initial reservation
+        rv = self.app.post(
+            '/v1/reservation',
+            data=json.dumps({
+                "team_id": initial_team_id,
+                "room_id": room_id,
+                "start": start_time,
+                "end": end_time
+            }),
+            content_type='application/json',
+            headers={
+                "Authorization": "Bearer " + student_auth_token
+            }
+        )
+        self.assertEquals(rv.status_code, 201)
+        self.assertEquals(len(Reservation.query.filter_by(team_id=initial_team_id).all()), 1)
+
+        # Attempt to create conflicting reservation
+        rv = self.app.post(
+            '/v1/reservation',
+            data=json.dumps({
+                "team_id": override_team_id,
+                "room_id": room_id,
+                "start": start_time,
+                "end": end_time
+            }),
+            content_type='application/json',
+            headers={
+                "Authorization": "Bearer " + student_auth_token
+            }
+        )
+        # Reservation not yet created
+        self.assertEquals(rv.status_code, 409)
+        response_json = json.loads(rv.data)
+        self.assertTrue("overridable" in response_json)
+        self.assertTrue(response_json["overridable"])
+        self.assertEquals(len(Reservation.query.filter_by(team_id=override_team_id).all()), 0)
+
+        # Actually add the new reservation, deleting the conflicting one
+        rv = self.app.post(
+            '/v1/reservation',
+            data=json.dumps({
+                "team_id": override_team_id,
+                "room_id": room_id,
+                "start": start_time,
+                "end": end_time,
+                "override": True
+            }),
+            content_type='application/json',
+            headers={
+                "Authorization": "Bearer " + student_auth_token
+            }
+        )
+        self.assertEquals(rv.status_code, 201)
+
+        # New reservation is created
+        self.assertEquals(len(Reservation.query.filter_by(team_id=override_team_id).all()), 1)
+
+        # Old reservation is deleted
+        self.assertEquals(len(Reservation.query.filter_by(team_id=initial_team_id).all()), 0)
+
+        num_reservations_after = len(Reservation.query.all())
         self.assertEquals(num_reservations_after - num_reservations_before, 1)
 
     def test_add_team_member_valid(self):
@@ -362,6 +458,126 @@ class TestCase(unittest.TestCase):
             content_type='application/json'
         )
         self.assertEquals(rv.status_code, 404)
+
+
+    def test_add_team_member_invalid_not_on_team(self):
+        """Test that users can be added from teams."""
+        team_creator = User.query.filter_by(name='student').first()
+        t = Team(name='test')
+        t.members.append(team_creator)
+        team_type = TeamType.query.filter_by(name='other_team').first()
+        t.team_type = team_type
+        second_user = User.query.filter_by(name='labbie').first()
+
+        database.get_db().add(t)
+        database.get_db().commit()
+
+        team_id = t.id
+        second_user_id = second_user.id
+
+        # test adding the user to the team
+        rv = self.app.post(
+            '/v1/team/' + str(team_id) + '/user/' + str(second_user_id),
+            content_type='application/json',
+            headers={
+                'Authorization': 'Bearer ' + second_user.generate_auth_token()
+            }
+        )
+        self.assertEquals(rv.status_code, 403)
+
+        new_team = Team.query.filter_by(name='test').first()
+        self.assertEquals(len(new_team.members), 1)
+
+
+    def test_add_team_member_invalid_single_team(self):
+        """Test that users can be added from teams."""
+        team_creator = User.query.filter_by(name='student').first()
+        t = Team(name='test')
+        t.members.append(team_creator)
+        team_type = TeamType.query.filter_by(name='single').first()
+        t.team_type = team_type
+        second_user = User.query.filter_by(name='labbie').first()
+
+        database.get_db().add(t)
+        database.get_db().commit()
+
+        team_id = t.id
+        second_user_id = second_user.id
+
+        # test adding the user to the team
+        rv = self.app.post(
+            '/v1/team/' + str(team_id) + '/user/' + str(second_user_id),
+            content_type='application/json',
+            headers={
+                'Authorization': 'Bearer ' + team_creator.generate_auth_token()
+            }
+        )
+        self.assertEquals(rv.status_code, 400)
+
+        new_team = Team.query.filter_by(name='test').first()
+        self.assertEquals(len(new_team.members), 1)
+
+
+    def test_add_team_member_invalid_user_id(self):
+        """Test that users can be added from teams."""
+        team_creator = User.query.filter_by(name='student').first()
+        t = Team(name='test')
+        t.members.append(team_creator)
+        team_type = TeamType.query.filter_by(name='other_team').first()
+        t.team_type = team_type
+        second_user = User.query.filter_by(name='labbie').first()
+
+        database.get_db().add(t)
+        database.get_db().commit()
+
+        team_id = t.id
+        second_user_id = second_user.id
+
+        self.assertIsNone(User.query.get(100))
+
+        # test adding the user to the team
+        rv = self.app.post(
+            '/v1/team/' + str(team_id) + '/user/' + '100',
+            content_type='application/json',
+            headers={
+                'Authorization': 'Bearer ' + team_creator.generate_auth_token()
+            }
+        )
+        self.assertEquals(rv.status_code, 400)
+
+        new_team = Team.query.filter_by(name='test').first()
+        self.assertEquals(len(new_team.members), 1)
+
+
+    def test_add_team_member_invalid_already_in_team(self):
+        """Test that users can be added from teams."""
+        team_creator = User.query.filter_by(name='student').first()
+        t = Team(name='test')
+        t.members.append(team_creator)
+        team_type = TeamType.query.filter_by(name='other_team').first()
+        t.team_type = team_type
+        second_user = User.query.filter_by(name='labbie').first()
+        t.members.append(second_user)
+
+        database.get_db().add(t)
+        database.get_db().commit()
+
+        team_id = t.id
+        second_user_id = second_user.id
+
+        # test adding the user to the team
+        rv = self.app.post(
+            '/v1/team/' + str(team_id) + '/user/' + str(second_user_id),
+            content_type='application/json',
+            headers={
+                'Authorization': 'Bearer ' + team_creator.generate_auth_token()
+            }
+        )
+        self.assertEquals(rv.status_code, 409)
+
+        new_team = Team.query.filter_by(name='test').first()
+        self.assertEquals(len(new_team.members), 2)
+
 
 if __name__ == '__main__':
     unittest.main()

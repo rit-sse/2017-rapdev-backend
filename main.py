@@ -13,9 +13,17 @@ from sqlalchemy import or_
 import datetime
 import iso8601
 from werkzeug.exceptions import HTTPException
+import pytz
 
 app = Flask(__name__)
 
+
+def parse_datetime(date_string):
+    try:
+        date = iso8601.parse_date(date_string)
+    except iso8601.ParseError:
+        return None
+    return date.astimezone(pytz.utc).replace(tzinfo=None)
 
 def returns_json(f):
     """Decorator to add the content type to responses."""
@@ -78,7 +86,6 @@ def shutdown_session(exception=None):
     """End the database session."""
     get_db().remove()
 
-
 @app.route('/v1/auth', methods=['POST'])
 @returns_json
 def auth():
@@ -101,6 +108,7 @@ def auth():
 
 @app.route('/v1/user/<int:user_id>', methods=['GET'])
 @returns_json
+#TODO secure this?
 def user_read(user_id):
     """Get a user by user ID."""
     user = User.query.get(user_id)
@@ -329,12 +337,9 @@ def reservation_add(token_user):
     if room is None:
         abort(400, 'invalid room id')
 
-    start = None
-    end = None
-    try:
-        start = iso8601.parse_date(request.json['start'])
-        end = iso8601.parse_date(request.json['end'])
-    except iso8601.ParseError:
+    start = parse_datetime(request.json['start'])
+    end = parse_datetime(request.json['end'])
+    if start is None or end is None:
         abort(400, 'cannot parse start or end date')
 
     if start >= end:
@@ -346,7 +351,7 @@ def reservation_add(token_user):
     conflicting_reservations = Reservation.query.filter(
         Reservation.end >= res.start,
         Reservation.start <= res.end,
-        Reservation.room_id == res.room_id
+        Reservation.room_id == room.id
     ).all()
 
     if len(conflicting_reservations) > 0:
@@ -402,7 +407,7 @@ def reservation_update(token_user, res_id):
     if room is None:
         abort(400, 'invalid room id')
 
-    # TODO use iso8601 to parse these. It will fail as-is.
+    # TODO use parse_datetime to parse these. It will fail as-is.
     start = request.json['start']
     end = request.json['end']
 
@@ -430,6 +435,7 @@ def reservation_update(token_user, res_id):
 
 @app.route('/v1/reservation/<int:res_id>', methods=['DELETE'])
 @returns_json
+#TODO secure this
 def reservation_delete(res_id):
     """Remove a reservation given its ID."""
     res = Reservation.query.get(res_id)
@@ -457,6 +463,7 @@ def room_list():
 
 @app.route('/v1/room', methods=['POST'])
 @returns_json
+#TODO secure this
 def room_add():
     """Add a room, given the room number."""
     if not json_param_exists('number'):
@@ -489,6 +496,7 @@ def room_read(room_id):
 
 @app.route('/v1/room/<int:room_id>', methods=['PUT'])
 @returns_json
+#TODO secure this
 def room_update(room_id):
     """Update a room given its room number and feature list."""
     room = Room.query.get(room_id)
@@ -524,6 +532,7 @@ def room_update(room_id):
 
 @app.route('/v1/room/<int:room_id>', methods=['DELETE'])
 @returns_json
+#TODO secure this
 def room_delete(room_id):
     """Remove a room given its ID."""
     room = Room.query.get(room_id)
@@ -559,13 +568,9 @@ def get_reservations():
     end_date = request.args.get('end')
 
     if start_date is not None and end_date is not None:
-        start = None
-        end = None
-
-        try:
-            start = iso8601.parse_date(start_date)
-            end = iso8601.parse_date(end_date)
-        except iso8601.ParseError:
+        start = parse_datetime(request.json['start'])
+        end = parse_datetime(request.json['end'])
+        if start is None or end is None:
             abort(400, 'cannot parse start or end date')
 
         reservations = Reservation.query.filter(
