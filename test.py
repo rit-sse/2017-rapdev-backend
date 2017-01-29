@@ -10,7 +10,6 @@ import main
 from models import User, Team
 
 
-
 class TestCase(unittest.TestCase):
     """Unit tests for APIs."""
 
@@ -90,6 +89,7 @@ class TestCase(unittest.TestCase):
         # TODO add test for presence of teams and permissions
 
     def test_add_team(self):
+        """Test that teams can be added."""
         rv = self.app.post(
             '/v1/team',
             data='{"name": "newteam1"}',
