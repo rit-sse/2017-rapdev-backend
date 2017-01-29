@@ -35,7 +35,7 @@ class User(Base):
                          back_populates="users")
     teams = relationship('Team',
                          secondary=join_table_user_teams,
-                         back_populates="users")
+                         back_populates="members")
 
     @staticmethod
     def verify_auth_token(token):
@@ -161,7 +161,7 @@ class Team(Base):
     name = Column(String(50), unique=True)
     team_type_id = Column(Integer, ForeignKey('teamtypes.id'))
     team_type = relationship("TeamType", back_populates="teams")
-    users = relationship('User',
+    members = relationship('User',
                          secondary=join_table_user_teams,
                          back_populates='teams')
     reservations = relationship('Reservation', back_populates='team')

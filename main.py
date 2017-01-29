@@ -45,10 +45,12 @@ def includes_user(f):
     return decorated_function
 
 
-def json_param_exists(json_blob, param_name):
-    return json_blob and \
-           param_name in json_blob and \
-           json_blob[param_name] is not None
+def json_param_exists(param_name, json_root=-1):
+    if json_root == -1:
+        json_root = request.json
+    return json_root and \
+           param_name in json_root and \
+           json_root[param_name] is not None
 
 @app.teardown_appcontext
 def shutdown_session(exception=None):
@@ -60,7 +62,7 @@ def shutdown_session(exception=None):
 @returns_json
 def auth():
     """Authenticate users."""
-    if not json_param_exists(request.json, 'username'):
+    if not json_param_exists('username'):
         abort(400)
     username = request.json['username']
 
@@ -95,8 +97,8 @@ def user_read(user_id):
 @includes_user
 def team_add(token_user):
     """Add a team given a team name."""
-    if not json_param_exists(request.json, 'name') or \
-       not json_param_exists(request.json, 'type'):
+    if not json_param_exists('name') or \
+       not json_param_exists('type'):
        abort(400)
     name = request.json['name']
     team_type = TeamType.query.filter_by(name=request.json['type']).first()
@@ -126,11 +128,11 @@ def team_read(team_id):
     """Get a team's info."""
     team = Team.query.get(team_id)
     if team is None:
-        abort(400)
+        abort(404)
 
     return json.dumps({
         'name': team.name,
-        'members': team.users
+        'members': team.members
     })
 
 
@@ -220,42 +222,38 @@ def team_user_delete(team_id):
 def reservation_add():
     """Add a reservation.
 
-    Uses the team ID, room ID, creator ID, start and end datetimes.
+    Uses the team ID, room ID, created by ID, start and end datetimes.
     """
-    team_id = request.json['team_id']
-    if team_id is None or len(team_id.strip()) == 0:
-        abort(400)
+    if not json_param_exists('team_id') or \
+       not json_param_exists('room_id') or \
+       not json_param_exists('created_by_id') or \
+       not json_param_exists('start') or \
+       not json_param_exists('end'):
+       abort(400)
 
+    team_id = request.json['team_id']
     team = Team.query.get(team_id)
     if team is None:
         abort(400)
 
     room_id = request.json['room_id']
-    if room_id is None or len(room_id.strip()) == 0:
-        abort(400)
-
     room = Room.query.get(room_id)
     if room is None:
         abort(400)
 
-    creator_id = request.json['creator_id']
-    if creator_id is None or len(creator_id.strip()) == 0:
-        abort(400)
-
-    creator = User.query.get(creator_id)
-    if creator is None:
+    # TODO make this come from the submitted token
+    created_by_id = request.json['created_by_id']
+    created_by = User.query.get(created_by_id)
+    if created_by is None:
         abort(400)
 
     start = request.json['start']
-    if start is None or len(start.strip()) == 0:
-        abort(400)
-
     end = request.json['end']
-    if end is None or len(end.strip()) == 0:
-        abort(400)
 
-    res = Reservation(team=team, room=room, created_by=creator,
+    res = Reservation(team=team, room=room, created_by=created_by,
                       start=start, end=end)
+
+    # TODO prevent double-booking
 
     get_db().add(res)
     get_db().commit()
@@ -282,52 +280,41 @@ def reservation_read(res_id):
 
 @app.route('/v1/reservation/<int:res_id>', methods=['PUT'])
 @returns_json
-def reservation_update(res_id):
+@includes_user
+def reservation_update(token_user, res_id):
     """Update a reservation.
 
-    Uses a team ID, room ID, creator ID, start and end datetimes.
+    Uses a room ID, start and end datetimes.
     """
-    team_id = request.json['team_id']
-    if team_id is None or len(team_id.strip()) == 0:
-        abort(400)
-
-    team = Team.query.get(team_id)
-    if team is None:
-        abort(400)
+    if not json_param_exists('room_id') or \
+       not json_param_exists('start') or \
+       not json_param_exists('end'):
+       abort(400)
 
     room_id = request.json['room_id']
-    if room_id is None or len(room_id.strip()) == 0:
-        abort(400)
-
     room = Room.query.get(room_id)
     if room is None:
         abort(400)
 
-    creator_id = request.json['creator_id']
-    if creator_id is None or len(creator_id.strip()) == 0:
-        abort(400)
-
-    creator = User.query.get(creator_id)
-    if creator is None:
-        abort(400)
-
     start = request.json['start']
-    if start is None or len(start.strip()) == 0:
-        abort(400)
-
     end = request.json['end']
-    if end is None or len(end.strip()) == 0:
-        abort(400)
 
     res = Reservation.query.get(res_id)
     if res is None:
         abort(400)
 
-    res.team = team
+    if not token_user.has_permission('reservation.update.elevated'):
+        is_my_reservation = any(map(lambda m: m.id == token_user.id,
+                                    res.team.members))
+        if not (is_my_reservation and
+                token_user.has_permission('reservation.update')):
+            abort(403)
+
     res.room = room
-    res.created_by = creator
     res.start = start
     res.end = end
+
+    # TODO prevent double-booking
 
     get_db().commit()
 
