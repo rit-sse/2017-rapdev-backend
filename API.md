@@ -125,7 +125,7 @@ Updates the team's name.
 
 #### Response
 
-On success, returns status code `203 No Content` and no body.
+On success, returns status code `204 No Content` and no body.
 
 ### DELETE `/api/v1/team/:id`
 
@@ -133,4 +133,22 @@ Deletes a team.
 
 #### Response
 
-On success, returns status code `203 No Content` and no body.
+On success, returns status code `204 No Content` and no body.
+
+## Team Members
+
+### POST `/api/v1/team_user/:team_id`
+
+Adds a user to the given team
+
+#### Body
+
+```json
+{
+    "user_id": 102
+}
+```
+
+#### Response
+
+On success, returns status code `204 No Content` and no body.
