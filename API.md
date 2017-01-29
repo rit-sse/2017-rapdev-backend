@@ -51,6 +51,20 @@ Reads information about a supplied user.
 }
 ```
 
+### GET `/api/v1/user/:user_name_partial`
+
+Searches for a user by the partially given name
+
+#### Response
+```json
+[
+  {
+    "id": 100,
+    "name": "Joe"
+  }
+]
+```
+
 ## Teams
 
 ### POST `/api/v1/team`
