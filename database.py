@@ -3,8 +3,19 @@
 from sqlalchemy import create_engine
 from sqlalchemy.orm import scoped_session, sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
+import os
 
-engine = create_engine('sqlite:///test.db', convert_unicode=True)
+def init_engine():
+    """Returns a initilized engine based on the running environment."""
+    if os.getenv('PRODUCTION', False):
+        USER = os.getenv('PG_ENV_POSTGRES_USER', 'postgres')
+        DB = os.getenv('PG_ENV_POSTGRES_DB', USER)
+        PASS = os.getenv('PG_ENV_POSTGRES_PASSWORD')
+        return create_engine('postgres://' + USER + ':' + PASS + '@pg:5432/' + DB)
+    else:
+        return create_engine('sqlite:///test.db', convert_unicode=True)
+
+engine = init_engine()
 _db_session = scoped_session(sessionmaker(autocommit=False,
                                           autoflush=False,
                                           bind=engine))
