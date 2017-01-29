@@ -109,7 +109,6 @@ class Team(Base):
                          back_populates='teams')
     reservations = relationship('Reservation', back_populates='team')
 
-
     def __init__(self, name=None):
         self.name = name
 

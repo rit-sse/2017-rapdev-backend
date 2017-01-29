@@ -9,6 +9,7 @@ db_session = scoped_session(sessionmaker(autocommit=False,
 Base = declarative_base()
 Base.query = db_session.query_property()
 
+
 def init_db():
     # import all modules here that might define models so that
     # they will be registered properly on the metadata.  Otherwise
@@ -16,6 +17,7 @@ def init_db():
     import models
     Base.metadata.create_all(bind=engine)
     seed()
+
 
 def seed():
     import models
@@ -31,31 +33,36 @@ def seed():
         models.TeamType(
             name='default',
             priority=4,
-            advance_time=7*2 # 2 weeks
-    ))
+            advance_time=7*2  # 2 weeks
+        )
+    )
     db_session.add(
         models.TeamType(
             name='other_team',
             priority=4,
-            advance_time=7*2 # 2 weeks
-    ))
+            advance_time=7*2  # 2 weeks
+        )
+    )
     db_session.add(
         models.TeamType(
             name='class',
             priority=3,
-            advance_time=7*2 # 2 weeks
-    ))
+            advance_time=7*2  # 2 weeks
+        )
+    )
     db_session.add(
         models.TeamType(
             name='colab_class',
             priority=2,
-            advance_time=7*2 # 2 weeks
-    ))
+            advance_time=7*2  # 2 weeks
+        )
+    )
     db_session.add(
         models.TeamType(
             name='senior_project',
             priority=1,
-            advance_time=7*2 # 2 weeks
-    ))
+            advance_time=7*2  # 2 weeks
+        )
+    )
 
     db_session.commit()
