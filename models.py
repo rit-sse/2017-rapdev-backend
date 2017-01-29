@@ -159,7 +159,7 @@ class Team(Base):
     __tablename__ = 'teams'
     id = Column(Integer, primary_key=True)
     name = Column(String(50), unique=True)
-    teamtype_id = Column(Integer, ForeignKey('teamtypes.id'))
+    team_type_id = Column(Integer, ForeignKey('teamtypes.id'))
     team_type = relationship("TeamType", back_populates="teams")
     users = relationship('User',
                          secondary=join_table_user_teams,
@@ -236,7 +236,7 @@ class Reservation(Base):
     team = relationship('Team', back_populates='reservations')
     room_id = Column(Integer, ForeignKey('rooms.id'))
     room = relationship('Room', back_populates='reservations')
-    creator_id = Column(Integer, ForeignKey('users.id'))
+    created_by_id = Column(Integer, ForeignKey('users.id'))
     created_by = relationship('User')
     start = Column(DateTime)
     end = Column(DateTime)
@@ -262,8 +262,8 @@ class Reservation(Base):
                 'id': self.room_id,
                 'number': self.room.number
             },
-            'creator': {
-                'id': self.creator_id,
+            'created_by': {
+                'id': self.created_by_id,
                 'name': self.created_by.name
             },
             'start': self.start,
