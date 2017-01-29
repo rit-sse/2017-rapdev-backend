@@ -217,26 +217,44 @@ def team_delete(token_user, team_id):
     get_db().delete(team)
     get_db().commit()
 
-    return '', 203
+    return '', 204
 
 
 # add/remove user to team
 
 @app.route('/v1/team_user/<int:team_id>', methods=['POST'])
 @returns_json
-def team_user_add(team_id):
+@includes_user
+def team_user_add(token_user, team_id):
     """Add a user to a team given the team and user IDs."""
     team = Team.query.get(team_id)
     if team is None:
         abort(404, 'team not found')
 
-    user_id = request.json['user_id']
-    if user_id is None or len(user_id.strip()) == 0:
+    # check for permissions to update the team
+    if not (token_user.has_permission('team.update.elevated') or
+                (token_user.has_permission('team.update') and
+                         team.has_member(token_user)
+                )
+            ):
+        abort(403, 'insufficient permissions to add user to team')
+
+
+    # don't allow adding to 'single' teams
+    if team.team_type == TeamType.query.filter_by(name='single').first():
+        abort(400, 'cannot add a user to a "single" team')
+
+    # get the user to add to the team
+    if not json_param_exists('user_id'):
         abort(400, 'invalid user id')
+    user_id = request.json['user_id']
 
     user = User.query.get(user_id)
     if user is None:
         abort(400, 'invalid user id')
+
+    if team.has_member(user):
+        abort(409, 'user already in team')
 
     user.teams.append(team)
     get_db().commit()
@@ -246,24 +264,36 @@ def team_user_add(team_id):
 
 @app.route('/v1/team_user/<int:team_id>', methods=['DELETE'])
 @returns_json
-def team_user_delete(team_id):
+@includes_user
+def team_user_delete(token_user, team_id):
     """Remove a user from a team given the team and user IDs."""
     team = Team.query.get(team_id)
     if team is None:
         abort(404, 'team not found')
 
-    user_id = request.json['user_id']
-    if user_id is None or len(user_id.strip()) == 0:
+    if len(team.members) == 1:
+        abort(400, 'only one member on team -- use team delete instead')
+
+    # check for permissions to delete the team
+    if not (token_user.has_permission('team.update.elevated') or
+                (token_user.has_permission('team.update') and
+                         team.has_member(token_user)
+                )
+            ):
+        abort(403, 'insufficient permissions to delete user from team')
+
+    if not json_param_exists('user_id'):
         abort(400, 'invalid user id')
+    user_id = request.json['user_id']
 
     user = User.query.get(user_id)
     if user is None:
         abort(400, 'invalid user id')
 
-    user.teams.delete(team)
+    user.teams.remove(team)
     get_db().commit()
 
-    return '', 203
+    return '', 204
 
 
 # reservation CRUD
