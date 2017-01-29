@@ -5,7 +5,7 @@ import tempfile
 import json
 
 import main
-from models import User
+from models import User, Team
 
 class TestCase(unittest.TestCase):
 
@@ -77,6 +77,16 @@ class TestCase(unittest.TestCase):
         self.assertEquals(len(got["teams"]), 0)
         self.assertEquals(len(got["permissions"]), 0)
         # TODO add test for presence of teams and permissions
+
+    def test_add_team(self):
+        rv = self.app.post(
+            '/v1/team',
+            data='{"name": "newteam1"}',
+            content_type='application/json'
+        )
+        self.assertEquals(rv.status_code, 201)
+        t = Team.query.first()
+        self.assertEquals(t.name, 'newteam1')
 
 if __name__ == '__main__':
     unittest.main()
