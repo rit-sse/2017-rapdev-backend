@@ -192,7 +192,7 @@ class TestCase(unittest.TestCase):
         u = User.query.filter_by(name='student').first()
         t = Team(name="testdelete")
         t.members.append(u)
-        team_type = TeamType.query.filter_by(name='single').first()
+        team_type = TeamType.query.filter_by(name='other_team').first()
         t.team_type = team_type
         room = Room.query.first()
         reservation = Reservation(start=datetime.datetime.now(),

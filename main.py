@@ -232,6 +232,9 @@ def team_delete(token_user, team_id):
     if team is None:
         abort(404, 'team not found')
 
+    if team.team_type.name == 'single':
+        abort(403, 'unable to delete team of type "single"')
+
     # check for permissions to delete the team
     if not (token_user.has_permission('team.delete.elevated') or
                 (token_user.has_permission('team.delete') and
