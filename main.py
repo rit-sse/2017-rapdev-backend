@@ -28,6 +28,28 @@ def returns_json(f):
     return decorated_function
 
 
+def includes_user(f):
+    """Add a request user parameter to the decorated function."""
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if 'Authorization' not in request.headers or \
+            not request.headers['Authorization'].startswith('Bearer '):
+            abort(401)
+        else:
+            token = request.headers['Authorization'][len('Bearer '):]
+            u = User.verify_auth_token(token)
+            if u is None:
+                abort(401)
+            else:
+                return f(u, *args, **kwargs)
+    return decorated_function
+
+
+def json_param_exists(json_blob, param_name):
+    return json_blob and \
+           param_name in json_blob and \
+           json_blob[param_name] is not None
+
 @app.teardown_appcontext
 def shutdown_session(exception=None):
     """End the database session."""
@@ -38,7 +60,7 @@ def shutdown_session(exception=None):
 @returns_json
 def auth():
     """Authenticate users."""
-    if not request.json or 'username' not in request.json:
+    if not json_param_exists(request.json, 'username'):
         abort(400)
     username = request.json['username']
 
@@ -70,14 +92,27 @@ def user_read(user_id):
 
 @app.route('/v1/team', methods=['POST'])
 @returns_json
-def team_add():
+@includes_user
+def team_add(token_user):
     """Add a team given a team name."""
+    if not json_param_exists(request.json, 'name') or \
+       not json_param_exists(request.json, 'type'):
+       abort(400)
     name = request.json['name']
-
-    if name is None or len(name.strip()) == 0:
+    team_type = TeamType.query.filter_by(name=request.json['type']).first()
+    if not team_type:
         abort(400)
 
+    if team_type.name == 'other_team':
+        if not token_user.has_permission('team.create') and \
+            not token_user.has_permission('team.create.elevated'):
+            abort(403)
+    else: # creating any team other than 'other_team' requires elevated
+        if not token_user.has_permission('team.create.elevated'):
+            abort(403)
+
     team = Team(name=name)
+    team.team_type = team_type
 
     get_db().add(team)
     get_db().commit()

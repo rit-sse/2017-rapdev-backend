@@ -64,7 +64,7 @@ def seed():
     # the types of team
     get_db().add(
         models.TeamType(
-            name='default',
+            name='single',
             priority=4,
             advance_time=7 * 2  # 2 weeks
         )

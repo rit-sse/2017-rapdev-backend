@@ -40,7 +40,11 @@ class User(Base):
     @staticmethod
     def verify_auth_token(token):
         """Get the user from a JWT token."""
-        decoded = jwt.decode(token, secret, algorithms=['HS256'])
+        decoded = None
+        try:
+            decoded = jwt.decode(token, secret, algorithms=['HS256'])
+        except jwt.DecodeError:
+            return None
         user = User.query.get(decoded['id'])
         return user
 
@@ -52,6 +56,14 @@ class User(Base):
     def generate_auth_token(self):
         """Create a JWT token with the user ID."""
         return jwt.encode({'id': self.id}, secret, algorithm='HS256')
+
+    def has_permission(self, permission_name):
+        """Check that a user has the given permission."""
+        for role in self.roles:
+            for permission in role.permissions:
+                if permission.name == permission_name:
+                    return True
+        return False
 
     def as_dict(self, include_teams_and_permissions=False):
         """
@@ -129,7 +141,7 @@ class TeamType(Base):
     __tablename__ = 'teamtypes'
     id = Column(Integer, primary_key=True)
     name = Column(String(50), unique=True)
-    teams = relationship('Team', back_populates='teamtype')
+    teams = relationship('Team', back_populates='team_type')
     priority = Column(Integer)
     # max days ahead that they can reserve a room
     advance_time = Column(Integer)
@@ -148,7 +160,7 @@ class Team(Base):
     id = Column(Integer, primary_key=True)
     name = Column(String(50), unique=True)
     teamtype_id = Column(Integer, ForeignKey('teamtypes.id'))
-    teamtype = relationship("TeamType", back_populates="teams")
+    team_type = relationship("TeamType", back_populates="teams")
     users = relationship('User',
                          secondary=join_table_user_teams,
                          back_populates='teams')

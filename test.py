@@ -89,14 +89,49 @@ class TestCase(unittest.TestCase):
 
     def test_add_team(self):
         """Test that teams can be added."""
+        team_count_original = len(Team.query.all())
+        u = User.query.filter_by(name='student').first()
         rv = self.app.post(
             '/v1/team',
-            data='{"name": "newteam1"}',
-            content_type='application/json'
+            data='{"name": "newteam1", "type": "other_team"}',
+            content_type='application/json',
+            headers = {"Authorization": "Bearer " + u.generate_auth_token()}
         )
         self.assertEquals(rv.status_code, 201)
         t = Team.query.first()
         self.assertEquals(t.name, 'newteam1')
+        team_count = len(Team.query.all())
+        self.assertEquals(team_count - team_count_original, 1)
+
+    def test_add_team_no_permission(self):
+        team_count_original = len(Team.query.all())
+        u = User.query.filter_by(name='student').first()
+        rv = self.app.post(
+            '/v1/team',
+            data='{"name": "newteam1", "type": "class"}',
+            content_type='application/json',
+            headers = {"Authorization": "Bearer " + u.generate_auth_token()}
+        )
+        self.assertEquals(rv.status_code, 403)
+        team_count = len(Team.query.all())
+        self.assertEquals(team_count, team_count_original)
+
+    def test_student_has_permission(self):
+        u = User.query.filter_by(name='student').first()
+        self.assertTrue(u.has_permission('room.read'))
+        self.assertFalse(u.has_permission('team.create.elevated'))
+
+    def test_failure_of_token_verify(self):
+        u = User.verify_auth_token("asdfasdfsadfsadfsadfa")
+        self.assertIsNone(u)
+
+    def test_token_verify_deleted_user(self):
+        self.assertIsNone(User.query.get(100))
+        u = User(name="foo")
+        u.id = 100
+        token = u.generate_auth_token()
+        got = User.verify_auth_token(token)
+        self.assertIsNone(got)
 
 if __name__ == '__main__':
     unittest.main()
