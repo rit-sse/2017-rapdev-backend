@@ -31,7 +31,7 @@ def returns_json(f):
                     headers.remove(header)
             headers.append(('Content-Type', 'application/json'))
             e.get_headers = lambda x: headers
-            e.get_body = lambda x: "{}"
+            e.get_body = lambda x: json.dumps({"message": e.description})
             raise e
         if isinstance(r, tuple):
             return Response(r[0], status=r[1], content_type='application/json')
@@ -46,12 +46,12 @@ def includes_user(f):
     def decorated_function(*args, **kwargs):
         if 'Authorization' not in request.headers or \
                 not request.headers['Authorization'].startswith('Bearer '):
-            abort(401)
+            abort(401, "missing or invalid authorization token")
         else:
             token = request.headers['Authorization'][len('Bearer '):]
             u = User.verify_auth_token(token)
             if u is None:
-                abort(401)
+                abort(401, "missing or invalid authorization token")
             else:
                 return f(u, *args, **kwargs)
     return decorated_function
@@ -84,7 +84,7 @@ def shutdown_session(exception=None):
 def auth():
     """Authenticate users."""
     if not json_param_exists('username'):
-        abort(400)
+        abort(400, "one or more required parameter is missing")
     username = request.json['username']
 
     user = User.query.filter_by(name=username).first()
@@ -106,7 +106,7 @@ def user_read(user_id):
     user = User.query.get(user_id)
 
     if user is None:
-        abort(404)
+        abort(404, "user not found")
 
     return json.dumps(user.as_dict(include_teams_and_permissions=True))
 
@@ -120,19 +120,19 @@ def team_add(token_user):
     """Add a team given a team name."""
     if not json_param_exists('name') or \
             not json_param_exists('type'):
-        abort(400)
+        abort(400, "one or more required parameter is missing")
     name = request.json['name']
     team_type = TeamType.query.filter_by(name=request.json['type']).first()
     if not team_type:
-        abort(400)
+        abort(400, "invalid team type")
 
     if team_type.name == 'other_team':
         if not token_user.has_permission('team.create') and \
                 not token_user.has_permission('team.create.elevated'):
-            abort(403)
+            abort(403, 'team creation is not permitted')
     else:  # creating any team other than 'other_team' requires elevated
         if not token_user.has_permission('team.create.elevated'):
-            abort(403)
+            abort(403, 'insufficient permissions to create a team of this type')
 
     team = Team(name=name)
     team.team_type = team_type
@@ -151,7 +151,7 @@ def team_read(token_user, team_id):
     """Get a team's info."""
     team = Team.query.get(team_id)
     if team is None:
-        abort(404)
+        abort(404, 'team not found')
 
     if (token_user.has_permission('team.read.elevated') or
             any(map(lambda u: u.id == token_user.id, team.members))):
@@ -168,13 +168,13 @@ def team_update(team_id):
     team = Team.query.get(team_id)
 
     if team is None:
-        abort(404)
+        abort(404, 'team not found')
 
     # TODO ensure the user is permitted to modify this team
 
     name = request.json['name']  # TODO change this to json_param_exists
     if name is None or len(name.strip()) == 0:
-        abort(400)
+        abort(400, 'name is invalid')
 
     team.name = name
     get_db().commit()
@@ -189,7 +189,7 @@ def team_delete(team_id):
     """Delete a team given its ID."""
     team = Team.query.get(team_id)
     if team is None:
-        abort(404)
+        abort(404, 'team not found')
 
     # TODO ensure the user is permitted to delete this team
     # TODO deschedule any reservations this team
@@ -208,15 +208,15 @@ def team_user_add(team_id):
     """Add a user to a team given the team and user IDs."""
     team = Team.query.get(team_id)
     if team is None:
-        abort(400)
+        abort(404, 'team not found')
 
     user_id = request.json['user_id']
     if user_id is None or len(user_id.strip()) == 0:
-        abort(400)
+        abort(400, 'invalid user id')
 
     user = User.query.get(user_id)
     if user is None:
-        abort(400)
+        abort(400, 'invalid user id')
 
     user.teams.append(team)
     get_db().commit()
@@ -230,15 +230,15 @@ def team_user_delete(team_id):
     """Remove a user from a team given the team and user IDs."""
     team = Team.query.get(team_id)
     if team is None:
-        abort(400)
+        abort(404, 'team not found')
 
     user_id = request.json['user_id']
     if user_id is None or len(user_id.strip()) == 0:
-        abort(400)
+        abort(400, 'invalid user id')
 
     user = User.query.get(user_id)
     if user is None:
-        abort(400)
+        abort(400, 'invalid user id')
 
     user.teams.delete(team)
     get_db().commit()
@@ -260,17 +260,17 @@ def reservation_add():
        not json_param_exists('created_by_id') or \
        not json_param_exists('start') or \
        not json_param_exists('end'):
-        abort(400)
+        abort(400, 'one or more required parameter is missing')
 
     team_id = request.json['team_id']
     team = Team.query.get(team_id)
     if team is None:
-        abort(400)
+        abort(400, 'invalid team id')
 
     room_id = request.json['room_id']
     room = Room.query.get(room_id)
     if room is None:
-        abort(400)
+        abort(400, 'invalid room id')
 
     # TODO make this come from the submitted token
     created_by_id = request.json['created_by_id']
@@ -298,7 +298,7 @@ def reservation_read(res_id):
     """Get a reservation's info given ID."""
     res = Reservation.query.get(res_id)
     if res is None:
-        abort(400)
+        abort(404, 'reservation not found')
 
     return json.dumps({
         'team': res.team,
@@ -320,26 +320,26 @@ def reservation_update(token_user, res_id):
     if not json_param_exists('room_id') or \
        not json_param_exists('start') or \
        not json_param_exists('end'):
-        abort(400)
+        abort(400, 'one or more required parameter is missing')
 
     room_id = request.json['room_id']
     room = Room.query.get(room_id)
     if room is None:
-        abort(400)
+        abort(400, 'invalid room id')
 
     start = request.json['start']
     end = request.json['end']
 
     res = Reservation.query.get(res_id)
     if res is None:
-        abort(400)
+        abort(400, 'invalid reservation id')
 
     if not token_user.has_permission('reservation.update.elevated'):
         is_my_reservation = any(map(lambda m: m.id == token_user.id,
                                     res.team.members))
         if not (is_my_reservation and
                 token_user.has_permission('reservation.update')):
-            abort(403)
+            abort(403, 'insufficient permissions to update reservation')
 
     res.room = room
     res.start = start
@@ -358,7 +358,7 @@ def reservation_delete(res_id):
     """Remove a reservation given its ID."""
     res = Reservation.query.get(res_id)
     if res is None:
-        abort(400)
+        abort(404, 'reservation not found')
 
     get_db().delete(res)
     get_db().commit()
@@ -384,10 +384,10 @@ def room_list():
 def room_add():
     """Add a room, given the room number."""
     if not request.json or 'number' not in request.json:
-        abort(400)
+        abort(400, 'one or more required parameter is missing')
     num = request.json['number']
     if num is None or len(num.strip()) == 0:
-        abort(400)
+        abort(400, 'invalid room number')
 
     room = Room(number=num)
 
@@ -395,7 +395,7 @@ def room_add():
         get_db().add(room)
         get_db().commit()
     except IntegrityError:
-        abort(400)
+        abort(409, 'room number is already in use')
     return json.dumps(room.as_dict(include_features=False)), 201
 
 
@@ -405,7 +405,7 @@ def room_read(room_id):
     """Get a room's info given its ID."""
     room = Room.query.get(room_id)
     if room is None:
-        abort(400)
+        abort(404, 'room not found')
 
     return json.dumps({
         'number': room.number,
@@ -421,17 +421,17 @@ def room_update(room_id):
     room = Room.query.get(room_id)
 
     if room is None:
-        abort(400)
+        abort(404, 'room not found')
 
     number = request.json['number']
     if number is None or len(number.strip()) == 0:
-        abort(400)
+        abort(400, 'invalid room number')
 
     room.number = number
 
     features = request.json['features']
     if features is None:
-        abort(400)
+        abort(400, 'one or more required parameter is missing')
 
     # remove relationships not in features
     for r in room.features:
@@ -454,7 +454,7 @@ def room_delete(room_id):
     """Remove a room given its ID."""
     room = Room.query.get(room_id)
     if room is None:
-        abort(400)
+        abort(404, 'room not found')
 
     get_db().delete(room)
     get_db().commit()
@@ -480,7 +480,7 @@ def get_reservations():
             start = iso8601.parse_date(start_date)
             end = iso8601.parse_date(end_date)
         except iso8601.ParseError:
-            abort(400)
+            abort(400, 'cannot parse start or end date')
 
         reservations = Reservation.query.filter(
             Reservation.end >= start, Reservation.start <= end)
