@@ -165,8 +165,8 @@ Creates a new reservation.
 {
     "team_id": 203,
     "room_id": 102,
-    "start": "2017-01-29T16:02:23.913000",
-    "end": "2017-01-29T17:02:56.301000",
+    "start": "2017-01-29T16:02:23.913000+05:00",
+    "end": "2017-01-29T17:02:56.301000+05:00",
     "override": true
 }
 ```
@@ -213,8 +213,8 @@ If the user has permission to see the reservation's team information, returns:
         "id": 401,
         "number": "1655"
     },
-    "start": "2017-01-29T16:02:23.913000",
-    "end": "2017-01-29T17:02:56.301000"
+    "start": "2017-01-29T16:02:23.913000+05:00",
+    "end": "2017-01-29T17:02:56.301000+05:00"
 }
 ```
 
@@ -231,7 +231,25 @@ Otherwise, returns:
         "id": 401,
         "number": "1655"
     },
-    "start": "2017-01-29T16:02:23.913000",
-    "end": "2017-01-29T17:02:56.301000"
+    "start": "2017-01-29T16:02:23.913000+05:00",
+    "end": "2017-01-29T17:02:56.301000+05:00"
 }
 ```
+
+### PUT `/api/v1/reservation/:id`
+
+Updates a reservation's time.
+
+#### Body
+
+```json
+{
+    "room_id": 102,
+    "start": "2017-01-29T16:02:23.913000+05:00",
+    "end": "2017-01-29T17:02:56.301000+05:00"
+}
+```
+
+#### Response
+
+On success, returns status code `204 No Content`.
