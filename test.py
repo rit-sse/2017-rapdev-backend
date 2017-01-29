@@ -340,5 +340,28 @@ class TestCase(unittest.TestCase):
         self.assertEquals(got["room"]["number"], reservation.room.number)
         self.assertEquals(got["id"], reservation.id)
 
+
+    def test_room_read(self):
+        """ test that querying an existing room returns json data """
+        room = Room.query.first()
+
+        rv = self.app.get(
+            '/v1/room/' + str(room.id),
+            content_type='application/json',
+        )
+        got = json.loads(rv.data)
+        self.assertTrue('features' in got)
+        self.assertTrue(len(got['features']) > 0)
+
+
+    def test_room_not_found(self):
+        """Test that get room returns a 404 for unknown rooms."""
+        self.assertIsNone(Room.query.get(100))
+        rv = self.app.get(
+            '/v1/room/100',
+            content_type='application/json'
+        )
+        self.assertEquals(rv.status_code, 404)
+
 if __name__ == '__main__':
     unittest.main()
