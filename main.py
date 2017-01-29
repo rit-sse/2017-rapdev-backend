@@ -358,28 +358,22 @@ def reservation_add(token_user):
     res = Reservation(team=team, room=room, created_by=token_user,
                       start=start, end=end)
 
-    conflicting_reservations = Reservation.query.filter(
-        Reservation.end >= res.start,
-        Reservation.start <= res.end,
-        Reservation.room_id == room.id
-    ).all()
+    attempt_override = False
+    if json_param_exists("override") and isinstance(request.json["override"], bool):
+        attempt_override = request.json["override"]
 
-    if len(conflicting_reservations) > 0:
-        can_override = True
-        for conflict in conflicting_reservations:
-            if conflict.team.team_type.priority <= team.team_type.priority:
-                can_override = False
-                break
-
-        attempt_override = False
-        if json_param_exists("override") and isinstance(request.json["override"], bool):
-            attempt_override = request.json["override"]
-
-        if attempt_override and can_override:
+    conflict_status, conflicting_reservations = res.validate_conflicts()
+    if conflict_status == Reservation.NO_CONFLICT:
+        pass
+    elif conflict_status == Reservation.CONFLICT_OVERRIDABLE:
+        if attempt_override:
+            # Delete conflicting reservations
             for conflict in conflicting_reservations:
                 get_db().delete(conflict)
         else:
-            return json.dumps({"overridable": can_override}), 409
+            return json.dumps({"overridable": True}), 409
+    elif conflict_status == Reservation.CONFLICT_FAILURE:
+        return json.dumps({"overridable": False}), 409
 
     get_db().add(res)
     get_db().commit()
@@ -437,7 +431,7 @@ def reservation_update(token_user, res_id):
     res.start = start
     res.end = end
 
-    # TODO prevent double-booking
+    # TODO prevent double-booking. See reservation_add(...)
 
     get_db().commit()
 

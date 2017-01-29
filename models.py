@@ -276,6 +276,11 @@ class Reservation(Base):
     start = Column(DateTime)
     end = Column(DateTime)
 
+    # Return values for validate_conflicts()
+    NO_CONFLICT = 0
+    CONFLICT_OVERRIDABLE = 1
+    CONFLICT_FAILURE = 2
+
     def __init__(self, start=None, end=None, team=None,
                  room=None, created_by=None):
         """Create a reservation."""
@@ -294,3 +299,23 @@ class Reservation(Base):
             'start': self.start.isoformat(),
             'end': self.end.isoformat()
         }
+
+    def validate_conflicts(self):
+        conflicting_reservations = Reservation.query.filter(
+            Reservation.end >= self.start,
+            Reservation.start <= self.end,
+            Reservation.room_id == self.room.id
+        ).all()
+
+        if len(conflicting_reservations) > 0:
+            can_override = True
+            for conflict in conflicting_reservations:
+                if conflict.team.team_type.priority <= self.team.team_type.priority:
+                    can_override = False
+                    break
+            if can_override:
+                return (Reservation.CONFLICT_OVERRIDABLE, conflicting_reservations)
+            else:
+                return (Reservation.CONFLICT_FAILURE, conflicting_reservations)
+        else:
+            return (Reservation.NO_CONFLICT, conflicting_reservations)
