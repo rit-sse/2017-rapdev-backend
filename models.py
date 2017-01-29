@@ -188,6 +188,10 @@ class Team(Base):
             base["members"] = members
         return base
 
+    def has_member(self, user):
+        """Check if the given user is a member of the team."""
+        return any(map(lambda u: u.id == user.id, self.members))
+
 
 join_table_room_roomfeatures = Table(
     'room_roomfeatures', Base.metadata,
