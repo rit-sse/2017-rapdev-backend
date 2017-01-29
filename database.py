@@ -36,30 +36,35 @@ def seed():
             name='default',
             priority=4,
             advance_time=7 * 2  # 2 weeks
-        ))
+        )
+    )
     db_session.add(
         models.TeamType(
             name='other_team',
             priority=4,
             advance_time=7 * 2  # 2 weeks
-        ))
+        )
+    )
     db_session.add(
         models.TeamType(
             name='class',
             priority=3,
             advance_time=7 * 2  # 2 weeks
-        ))
+        )
+    )
     db_session.add(
         models.TeamType(
             name='colab_class',
             priority=2,
             advance_time=7 * 2  # 2 weeks
-        ))
+        )
+    )
     db_session.add(
         models.TeamType(
             name='senior_project',
             priority=1,
             advance_time=7 * 2  # 2 weeks
-        ))
+        )
+    )
 
     db_session.commit()
