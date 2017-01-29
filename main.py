@@ -12,6 +12,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy import or_
 import datetime
 import iso8601
+from werkzeug.exceptions import HTTPException
 
 app = Flask(__name__)
 
@@ -20,7 +21,18 @@ def returns_json(f):
     """Decorator to add the content type to responses."""
     @wraps(f)
     def decorated_function(*args, **kwargs):
-        r = f(*args, **kwargs)
+        try:
+            r = f(*args, **kwargs)
+        except HTTPException as e:
+            # monkey-patch the headers / body to be json
+            headers = e.get_headers()
+            for header in headers:
+                if 'Content-Type' in header:
+                    headers.remove(header)
+            headers.append(('Content-Type', 'application/json'))
+            e.get_headers = lambda x: headers
+            e.get_body = lambda x: "{}"
+            raise e
         if isinstance(r, tuple):
             return Response(r[0], status=r[1], content_type='application/json')
         else:
