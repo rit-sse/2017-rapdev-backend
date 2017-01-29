@@ -137,17 +137,17 @@ On success, returns status code `204 No Content` and no body.
 
 ## Team Members
 
-### POST `/api/v1/team_user/:team_id`
+### POST `/api/v1/team/:team_id/user/:user_id`
 
 Adds a user to the given team
 
-#### Body
+#### Response
 
-```json
-{
-    "user_id": 102
-}
-```
+On success, returns status code `204 No Content` and no body.
+
+### DELETE `/api/v1/team/:team_id/user/:user_id`
+
+Removes a user from the given team
 
 #### Response
 
