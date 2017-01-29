@@ -73,3 +73,34 @@ The value of `type` _must_ be either `"student"`, `"other_team"`, `"class"`, `"c
 On success, returns status code `201 Created` with no body.
 
 On insufficient permissions, status code `403 Forbidden`.
+
+### GET `/api/v1/team/:id`
+
+Gets information about a team.
+
+#### Response
+
+If this user has `team.read.elevated` _or_ the user has `team.read` and the user is a member of this team.
+
+```json
+{
+    "id": 100,
+    "name": "teamname",
+    "type": "teamtype",
+    "members": [
+        {
+            "id": 200,
+            "name": "Joseph"
+        }
+    ]
+}
+```
+
+Otherwise:
+
+```json
+{
+    "id": 100,
+    "type": "teamtype"
+}
+```
