@@ -61,5 +61,22 @@ class TestCase(unittest.TestCase):
         )
         self.assertEquals(rv.status_code, 404)
 
+    def test_user_found(self):
+        u = User(name='Catherine', email='cat@example.com')
+        database.get_db().add(u)
+        database.get_db().commit()
+        rv = self.app.get(
+            '/v1/user/' + str(u.id),
+            content_type='application/json'
+        )
+        self.assertEquals(rv.status_code, 200)
+        got = json.loads(rv.data)
+        self.assertEquals(got["id"], u.id)
+        self.assertEquals(got["name"], u.name)
+        self.assertEquals(got["email"], u.email)
+        self.assertEquals(len(got["teams"]), 0)
+        self.assertEquals(len(got["permissions"]), 0)
+        # TODO add test for presence of teams and permissions
+
 if __name__ == '__main__':
     unittest.main()
