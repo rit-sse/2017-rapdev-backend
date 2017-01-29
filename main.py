@@ -9,10 +9,7 @@ from sqlalchemy import or_
 import datetime
 import iso8601
 
-
 app = Flask(__name__)
-
-secret = 'secret'
 
 
 def returns_json(f):
@@ -48,7 +45,7 @@ def auth():
         get_db().add(user)
         get_db().commit()
 
-    encoded = jwt.encode({'id': user.id}, secret, algorithm='HS256')
+    encoded = user.generate_auth_token()
 
     return json.dumps({'token': encoded})
 

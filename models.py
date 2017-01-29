@@ -1,12 +1,17 @@
 from sqlalchemy import Column, Integer, String, Table, ForeignKey, DateTime
 from sqlalchemy.orm import relationship
 from database import Base
+import jwt
+
+
+secret = 'secret'
 
 
 join_table_user_roles = Table('user_roles', Base.metadata,
     Column('user_id', Integer, ForeignKey('users.id')),
     Column('role_id', Integer, ForeignKey('roles.id'))
 )
+
 
 join_table_user_teams = Table('user_teams', Base.metadata,
     Column('user_id', Integer, ForeignKey('users.id')),
@@ -32,6 +37,15 @@ class User(Base):
         """Create a user."""
         self.name = name
         self.email = email
+
+
+    def generate_auth_token(self):
+        return jwt.encode({'id': self.id}, secret, algorithm='HS256')
+
+    def verify_auth_token(self, token):
+        decoded = jwt.decode(token, secret, algorithms=['HS256'])
+        user = User.query.get(decoded['id'])
+        return user
 
     def as_dict(self, include_teams_and_permissions=False):
         """
