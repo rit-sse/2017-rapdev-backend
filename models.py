@@ -65,7 +65,7 @@ class User(Base):
                     return True
         return False
 
-    def as_dict(self, include_teams_and_permissions=False):
+    def as_dict(self, include_teams_and_permissions=False, for_user=None):
         """
         Get the user as a dictionary.
 
@@ -81,7 +81,7 @@ class User(Base):
                 'id': self.id,
                 'name': self.name,
                 'email': self.email,
-                'teams': self.teams,
+                'teams': map(lambda t: t.as_dict(for_user=for_user), self.teams),
                 'permissions': all_permissions
             }
         else:
@@ -177,9 +177,9 @@ class Team(Base):
             "id": self.id,
             "type": self.team_type.name
         }
-        if for_user and for_user.has_permission('team.read.elevated') or \
+        if for_user and (for_user.has_permission('team.read.elevated') or \
                 (for_user.has_permission('team.read')
-                    and self.has_member(for_user)):
+                    and self.has_member(for_user))):
             base["name"] = self.name
             base["advance_time"] = self.team_type.advance_time
             members = []
