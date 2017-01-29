@@ -192,7 +192,7 @@ def team_update(token_user, team_id):
     except IntegrityError:
         abort(409, 'team name is already in use')
 
-    return '', 203
+    return '', 204
 
 
 @app.route('/v1/team/<int:team_id>', methods=['DELETE'])
@@ -222,10 +222,10 @@ def team_delete(token_user, team_id):
 
 # add/remove user to team
 
-@app.route('/v1/team_user/<int:team_id>', methods=['POST'])
+@app.route('/v1/team/<int:team_id>/user/<int:user_id>', methods=['POST'])
 @returns_json
 @includes_user
-def team_user_add(token_user, team_id):
+def team_user_add(token_user, team_id, user_id):
     """Add a user to a team given the team and user IDs."""
     team = Team.query.get(team_id)
     if team is None:
@@ -244,11 +244,6 @@ def team_user_add(token_user, team_id):
     if team.team_type == TeamType.query.filter_by(name='single').first():
         abort(400, 'cannot add a user to a "single" team')
 
-    # get the user to add to the team
-    if not json_param_exists('user_id'):
-        abort(400, 'invalid user id')
-    user_id = request.json['user_id']
-
     user = User.query.get(user_id)
     if user is None:
         abort(400, 'invalid user id')
@@ -259,13 +254,13 @@ def team_user_add(token_user, team_id):
     user.teams.append(team)
     get_db().commit()
 
-    return '', 203
+    return '', 200
 
 
-@app.route('/v1/team_user/<int:team_id>', methods=['DELETE'])
+@app.route('/v1/team/<int:team_id>/user/<int:user_id>', methods=['DELETE'])
 @returns_json
 @includes_user
-def team_user_delete(token_user, team_id):
+def team_user_delete(token_user, team_id, user_id):
     """Remove a user from a team given the team and user IDs."""
     team = Team.query.get(team_id)
     if team is None:
@@ -281,10 +276,6 @@ def team_user_delete(token_user, team_id):
                 )
             ):
         abort(403, 'insufficient permissions to delete user from team')
-
-    if not json_param_exists('user_id'):
-        abort(400, 'invalid user id')
-    user_id = request.json['user_id']
 
     user = User.query.get(user_id)
     if user is None:

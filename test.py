@@ -267,10 +267,7 @@ class TestCase(unittest.TestCase):
 
         # test adding the user to the team
         rv = self.app.post(
-            '/v1/team_user/' + str(team_id),
-            data=json.dumps({
-                'user_id': second_user_id
-            }),
+            '/v1/team/' + str(team_id) + '/user/' + str(second_user_id),
             content_type='application/json',
             headers={
                 'Authorization': 'Bearer ' + team_creator.generate_auth_token()
@@ -300,10 +297,7 @@ class TestCase(unittest.TestCase):
 
             # test removing the user from the team
             rv = self.app.delete(
-                '/v1/team_user/' + str(team_id),
-                data=json.dumps({
-                    'user_id': second_user_id
-                }),
+                '/v1/team/' + str(team_id) + '/user/' + str(second_user_id),
                 content_type='application/json',
                 headers={
                     'Authorization': 'Bearer ' + team_creator.generate_auth_token()
