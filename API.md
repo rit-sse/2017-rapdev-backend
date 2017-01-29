@@ -87,6 +87,7 @@ If this user has `team.read.elevated` _or_ the user has `team.read` and the user
     "id": 100,
     "name": "teamname",
     "type": "teamtype",
+    "advance_time": 14,
     "members": [
         {
             "id": 200,
@@ -104,3 +105,8 @@ Otherwise:
     "type": "teamtype"
 }
 ```
+
+#### Notes
+
+The property `advance_time` indicates the number of days in advance that a team
+can book a reservation.

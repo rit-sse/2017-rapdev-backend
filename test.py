@@ -138,6 +138,7 @@ class TestCase(unittest.TestCase):
         self.assertEquals(len(got["members"]), 1)
         self.assertEquals(got["members"][0]["id"], u.id)
         self.assertEquals(got["members"][0]["name"], u.name)
+        self.assertEquals(got["advance_time"], team.team_type.advance_time)
 
     def test_get_team_user_is_not_on(self):
         """Test that a non-elevated user can not query extended details of
@@ -163,6 +164,7 @@ class TestCase(unittest.TestCase):
         self.assertEquals(got["type"], team.team_type.name)
         self.assertTrue("name" not in got)
         self.assertTrue("members" not in got)
+        self.assertTrue("advance_time" not in got)
 
     def test_student_has_permission(self):
         u = User.query.filter_by(name='student').first()

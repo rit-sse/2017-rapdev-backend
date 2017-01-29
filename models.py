@@ -178,6 +178,7 @@ class Team(Base):
         }
         if with_details:
             base["name"] = self.name
+            base["advance_time"] = self.team_type.advance_time
             members = []
             for member in self.members:
                 members.append({
