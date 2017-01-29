@@ -1,0 +1,35 @@
+team.create          # can create lowest priority teams
+team.create.elevated # can create class teams, senior projects
+team.delete          # can delete any team of which I am a member
+team.delete.elevated # can delete any team
+team.read            # can 'read' teams to which I belong
+team.read.elevated   # can 'read' any team (labbies, profs, admins)
+team.update          # can add / remove members to teams to which I belong(!)
+team.update.elevated # can add / remove any member from any team
+
+
+reservation.create   # make a reservation with a team of which I am a member
+reservation.delete   # delete a reservation of a team of which I am a member
+reservation.delete.elevated # delete any reservation
+reservation.read     # see all information (refer to team.read for team names)
+reservation.update   # can change start/end time of a reservation I
+reservation.update.elevated # can change any reservation
+
+room.update.elevated # can change room details (add / remove features)
+room.create.elevated # can create new rooms
+room.read            #
+room.delete.elevated # can remove rooms!
+feature.create       # can create new room features (admins only)
+feature.delete       # can remove room features (admins)
+feature.update       # can edit a feature's name (admins)
+feature.read         # yes
+
+role.create          # can make a new role
+role.delete          # can remove a role
+role.update          # can add/remove permissions from a role
+
+DEFINITIONS:
+'read' - means seeing members AND team name
+
+NOTES:
+'elevated' might mean 'any'
