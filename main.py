@@ -4,7 +4,7 @@ Main logic and API routes.
 """
 
 from flask import Flask, request, abort, Response
-from database import get_db
+from database import get_db, init_db
 from models import *
 from functools import wraps
 import json
@@ -442,6 +442,11 @@ def get_reservations():
 
 
 if __name__ == '__main__':
+    import sys
+    if len(sys.argv) > 1 and sys.argv[1] == 'init':
+        print 'init db...'
+        init_db()
+
     import os
     if os.getenv('PRODUCTION') == 'TRUE':
         app.run(host='0.0.0.0')
