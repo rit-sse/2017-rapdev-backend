@@ -110,3 +110,27 @@ Otherwise:
 
 The property `advance_time` indicates the number of days in advance that a team
 can book a reservation.
+
+### PUT `/api/v1/team/:id`
+
+Updates the team's name.
+
+#### Body
+
+```json
+{
+    "name": "newteamname"
+}
+```
+
+#### Response
+
+On success, returns status code `203 No Content` and no body.
+
+### DELETE `/api/v1/team/:id`
+
+Deletes a team.
+
+#### Response
+
+On success, returns status code `203 No Content` and no body.
