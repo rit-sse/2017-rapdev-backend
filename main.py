@@ -127,7 +127,7 @@ def user_search_partial(user_name):
         abort(400, "no user name supplied")
 
     ret = []
-    for user in User.query.filter(User.name.like(user_name + "%")):
+    for user in User.query.filter(User.name.ilike(user_name + "%")):
         ret.append({
             "id": user.id,
             "name": user.name
