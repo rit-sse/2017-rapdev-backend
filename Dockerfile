@@ -8,4 +8,4 @@ RUN python setup.py
 RUN python test.py
 
 EXPOSE 5000
-CMD python main.py
+CMD PRODUCTION=TRUE python main.py

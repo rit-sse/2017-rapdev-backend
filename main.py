@@ -442,4 +442,8 @@ def get_reservations():
 
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0')
+    import os
+    if os.getenv('PRODUCTION') == 'TRUE':
+        app.run(host='0.0.0.0')
+    else:
+        app.run()
