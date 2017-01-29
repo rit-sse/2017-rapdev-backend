@@ -16,6 +16,7 @@ secret = 'secret'
 
 
 def returns_json(f):
+    """Decorator to add the content type to responses."""
     @wraps(f)
     def decorated_function(*args, **kwargs):
         r = f(*args, **kwargs)
@@ -28,12 +29,14 @@ def returns_json(f):
 
 @app.teardown_appcontext
 def shutdown_session(exception=None):
+    """End the database session."""
     db_session.remove()
 
 
 @app.route('/v1/auth', methods=['POST'])
 @returns_json
 def auth():
+    """Authenticate users."""
     if not request.json or 'username' not in request.json:
         abort(400)
     username = request.json['username']
@@ -53,9 +56,7 @@ def auth():
 @app.route('/v1/user/<int:user_id>')
 @returns_json
 def user_by_id(user_id):
-    """
-    Get a user by user ID.
-    """
+    """Get a user by user ID."""
     user = User.query.get(user_id)
 
     if user is None:
@@ -69,9 +70,7 @@ def user_by_id(user_id):
 @app.route('/v1/team', methods=['POST'])
 @returns_json
 def team_add():
-    """
-    Add a team given a team name
-    """
+    """Add a team given a team name."""
     name = request.json['name']
 
     if name is None or len(name.strip()) == 0:
@@ -88,9 +87,7 @@ def team_add():
 @app.route('/v1/team/<int:team_id>', methods=['GET'])
 @returns_json
 def team_read(team_id):
-    """
-    Get a team's info
-    """
+    """Get a team's info."""
     team = Team.query.get(team_id)
     if team is None:
         abort(400)
@@ -104,9 +101,7 @@ def team_read(team_id):
 @app.route('/v1/team/<int:team_id>', methods=['PUT'])
 @returns_json
 def team_update(team_id):
-    """
-    Update a team's name given name
-    """
+    """Update a team's name given name."""
     team = Team.query.get(team_id)
 
     if team is None:
@@ -125,9 +120,7 @@ def team_update(team_id):
 @app.route('/v1/team/<int:team_id>', methods=['DELETE'])
 @returns_json
 def team_delete(team_id):
-    """
-    Delete a team given its id
-    """
+    """Delete a team given its ID."""
     team = Team.query.get(team_id)
     if team is None:
         abort(400)
@@ -143,9 +136,7 @@ def team_delete(team_id):
 @app.route('/v1/team_user/<int:team_id>', methods=['POST'])
 @returns_json
 def team_user_add(team_id):
-    """
-    Add a user to a team given the team and user ids
-    """
+    """Add a user to a team given the team and user IDs."""
     team = Team.query.get(team_id)
     if team is None:
         abort(400)
@@ -167,9 +158,7 @@ def team_user_add(team_id):
 @app.route('/v1/team_user/<int:team_id>', methods=['DELETE'])
 @returns_json
 def team_user_delete(team_id):
-    """
-    Remove a user from a team given the team and user ids
-    """
+    """Remove a user from a team given the team and user IDs."""
     team = Team.query.get(team_id)
     if team is None:
         abort(400)
@@ -193,8 +182,9 @@ def team_user_delete(team_id):
 @app.route('/v1/reservation', methods=['POST'])
 @returns_json
 def reservation_add():
-    """
-    Add a reservation given the team id, room id, creator id, start and end datetimes
+    """Add a reservation.
+
+    Uses the team ID, room ID, creator ID, start and end datetimes.
     """
     team_id = request.json['team_id']
     if team_id is None or len(team_id.strip()) == 0:
@@ -228,7 +218,8 @@ def reservation_add():
     if end is None or len(end.strip()) == 0:
         abort(400)
 
-    res = Reservation(team=team, room=room, created_by=creator, start=start, end=end)
+    res = Reservation(team=team, room=room, created_by=creator,
+                      start=start, end=end)
 
     db_session.add(res)
     db_session.commit()
@@ -239,9 +230,7 @@ def reservation_add():
 @app.route('/v1/reservation/<int:res_id>', methods=['GET'])
 @returns_json
 def reservation_read(res_id):
-    """
-    Get a reservation's info given id
-    """
+    """Get a reservation's info given ID."""
     res = Reservation.query.get(res_id)
     if res is None:
         abort(400)
@@ -258,8 +247,9 @@ def reservation_read(res_id):
 @app.route('/v1/reservation/<int:res_id>', methods=['PUT'])
 @returns_json
 def reservation_update(res_id):
-    """
-    Update a reservation given team id, room id, creator id, start and end datetimes
+    """Update a reservation.
+
+    Uses a team ID, room ID, creator ID, start and end datetimes.
     """
     team_id = request.json['team_id']
     if team_id is None or len(team_id.strip()) == 0:
@@ -311,9 +301,7 @@ def reservation_update(res_id):
 @app.route('/v1/reservation/<int:res_id>', methods=['DELETE'])
 @returns_json
 def reservation_delete(res_id):
-    """
-    Remove a reservation given its id
-    """
+    """Remove a reservation given its ID."""
     res = Reservation.query.get(res_id)
     if res is None:
         abort(400)
@@ -329,9 +317,7 @@ def reservation_delete(res_id):
 @app.route('/v1/room', methods=['POST'])
 @returns_json
 def room_add():
-    """
-    add a room, given the room number
-    """
+    """Add a room, given the room number."""
     if not request.json or 'number' not in request.json:
         abort(400)
     num = request.json['number']
@@ -351,9 +337,7 @@ def room_add():
 @app.route('/v1/room/<int:room_id>', methods=['GET'])
 @returns_json
 def room_read(room_id):
-    """
-    Get a room's info given its id
-    """
+    """Get a room's info given its ID."""
     room = Room.query.get(room_id)
     if room is None:
         abort(400)
@@ -368,9 +352,7 @@ def room_read(room_id):
 @app.route('/v1/room/<int:room_id>', methods=['PUT'])
 @returns_json
 def room_update(room_id):
-    """
-    Update a room given its room number and feature array
-    """
+    """Update a room given its room number and feature list."""
     room = Room.query.get(room_id)
 
     if room is None:
@@ -404,9 +386,7 @@ def room_update(room_id):
 @app.route('/v1/room/<int:room_id>', methods=['DELETE'])
 @returns_json
 def room_delete(room_id):
-    """
-    Remove a room given its id
-    """
+    """Remove a room given its ID."""
     room = Room.query.get(room_id)
     if room is None:
         abort(400)
@@ -420,12 +400,10 @@ def room_delete(room_id):
 @app.route('/v1/reservation', methods=['GET'])
 @returns_json
 def get_reservations():
-    """
-    get filtered reservation list
-    optional params start, end
-    :return: list of reservations
-    """
+    """Get a filtered reservation list.
 
+    Optional query params: start, end
+    """
     start_date = request.args.get('start')
     end_date = request.args.get('end')
 
@@ -439,10 +417,12 @@ def get_reservations():
         except iso8601.ParseError:
             abort(400)
 
-        reservations = Reservation.query.filter(Reservation.end >= start, Reservation.start <= end)
+        reservations = Reservation.query.filter(
+            Reservation.end >= start, Reservation.start <= end)
     else:
-        reservations = Reservation.query.filter(or_(Reservation.start >= datetime.datetime.now(),
-                                                Reservation.end >= datetime.datetime.now()))
+        reservations = Reservation.query.filter(
+            or_(Reservation.start >= datetime.datetime.now(),
+                Reservation.end >= datetime.datetime.now()))
 
     reservations = map(lambda x: x.as_dict(), reservations)
 

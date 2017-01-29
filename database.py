@@ -11,6 +11,7 @@ Base.query = db_session.query_property()
 
 
 def init_db():
+    """Initialize the database."""
     # import all modules here that might define models so that
     # they will be registered properly on the metadata.  Otherwise
     # you will have to import them first before calling init_db()
@@ -20,6 +21,7 @@ def init_db():
 
 
 def seed():
+    """Seed the database with sample data."""
     import models
     # the rooms
     roomnumbers = ['1560', '1561', '1562', '1563', '1564',
@@ -33,36 +35,31 @@ def seed():
         models.TeamType(
             name='default',
             priority=4,
-            advance_time=7*2  # 2 weeks
-        )
-    )
+            advance_time=7 * 2  # 2 weeks
+        ))
     db_session.add(
         models.TeamType(
             name='other_team',
             priority=4,
-            advance_time=7*2  # 2 weeks
-        )
-    )
+            advance_time=7 * 2  # 2 weeks
+        ))
     db_session.add(
         models.TeamType(
             name='class',
             priority=3,
-            advance_time=7*2  # 2 weeks
-        )
-    )
+            advance_time=7 * 2  # 2 weeks
+        ))
     db_session.add(
         models.TeamType(
             name='colab_class',
             priority=2,
-            advance_time=7*2  # 2 weeks
-        )
-    )
+            advance_time=7 * 2  # 2 weeks
+        ))
     db_session.add(
         models.TeamType(
             name='senior_project',
             priority=1,
-            advance_time=7*2  # 2 weeks
-        )
-    )
+            advance_time=7 * 2  # 2 weeks
+        ))
 
     db_session.commit()
