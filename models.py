@@ -170,6 +170,23 @@ class Team(Base):
         """Create a team."""
         self.name = name
 
+    def as_dict(self, with_details=False):
+        """Convert to a dict, optionally including name and member details."""
+        base = {
+            "id": self.id,
+            "type": self.team_type.name
+        }
+        if with_details:
+            base["name"] = self.name
+            members = []
+            for member in self.members:
+                members.append({
+                    "id": member.id,
+                    "name": member.name
+                })
+            base["members"] = members
+        return base
+
 
 join_table_room_roomfeatures = Table(
     'room_roomfeatures', Base.metadata,

@@ -7,7 +7,7 @@ import tempfile
 import json
 
 import main
-from models import User, Team
+from models import User, Team, TeamType
 
 
 class TestCase(unittest.TestCase):
@@ -115,6 +115,54 @@ class TestCase(unittest.TestCase):
         self.assertEquals(rv.status_code, 403)
         team_count = len(Team.query.all())
         self.assertEquals(team_count, team_count_original)
+
+    def test_get_team_user_is_on(self):
+        """Test that a user can query their own team."""
+        u = User.query.filter_by(name='student').first()
+        team_type = TeamType.query.filter_by(name='single').first()
+        team = Team(name="testteam1")
+        team.members.append(u)
+        team.team_type = team_type
+        database.get_db().add(team)
+        database.get_db().commit()
+        rv = self.app.get(
+            '/v1/team/' + str(team.id),
+            content_type='application/json',
+            headers = {"Authorization": "Bearer " + u.generate_auth_token()}
+        )
+        self.assertEquals(rv.status_code, 200)
+        got = json.loads(rv.data)
+        self.assertEquals(got["id"], team.id)
+        self.assertEquals(got["name"], team.name)
+        self.assertEquals(got["type"], team.team_type.name)
+        self.assertEquals(len(got["members"]), 1)
+        self.assertEquals(got["members"][0]["id"], u.id)
+        self.assertEquals(got["members"][0]["name"], u.name)
+
+    def test_get_team_user_is_not_on(self):
+        """Test that a non-elevated user can not query extended details of
+        other teams."""
+        student = User.query.filter_by(name='student').first()
+        professor = User.query.filter_by(name='professor').first()
+        team_type = TeamType.query.filter_by(name='single').first()
+        team = Team(name="testteam1")
+        team.team_type = team_type
+        team.members.append(professor)
+        database.get_db().add(team)
+        database.get_db().commit()
+        rv = self.app.get(
+            '/v1/team/' + str(team.id),
+            content_type='application/json',
+            headers = {
+                "Authorization": "Bearer " + student.generate_auth_token()
+            }
+        )
+        self.assertEquals(rv.status_code, 200)
+        got = json.loads(rv.data)
+        self.assertEquals(got["id"], team.id)
+        self.assertEquals(got["type"], team.team_type.name)
+        self.assertTrue("name" not in got)
+        self.assertTrue("members" not in got)
 
     def test_student_has_permission(self):
         u = User.query.filter_by(name='student').first()

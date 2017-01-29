@@ -137,20 +137,18 @@ def team_add(token_user):
 
 @app.route('/v1/team/<int:team_id>', methods=['GET'])
 @returns_json
-def team_read(team_id):
+@includes_user
+def team_read(token_user, team_id):
     """Get a team's info."""
     team = Team.query.get(team_id)
     if team is None:
         abort(404)
 
-    # TODO if this user does not have permission to read the team, only give
-    # the team type
-    return json.dumps({
-        # TODO add team type's name
-        'name': team.name,
-        # TODO make each member into a {"name": "...", "id", 100} type dict
-        'members': team.members
-    })
+    if (token_user.has_permission('team.read.elevated') or
+            any(map(lambda u: u.id == token_user.id, team.members))):
+        return json.dumps(team.as_dict(with_details=True))
+
+    return json.dumps(team.as_dict(with_details=False))
 
 
 @app.route('/v1/team/<int:team_id>', methods=['PUT'])
