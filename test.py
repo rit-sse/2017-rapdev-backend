@@ -52,5 +52,14 @@ class TestCase(unittest.TestCase):
         num_users = len(User.query.all())
         self.assertEquals(num_users, 1)
 
+    def test_user_not_found(self):
+        num_users = len(User.query.all())
+        self.assertEquals(num_users, 0)
+        rv = self.app.get(
+            '/v1/user/100',
+            content_type='application/json'
+        )
+        self.assertEquals(rv.status_code, 404)
+
 if __name__ == '__main__':
     unittest.main()
