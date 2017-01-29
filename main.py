@@ -52,7 +52,7 @@ def auth():
 
 @app.route('/v1/user/<int:user_id>')
 @returns_json
-def user_by_id(user_id):
+def user_read(user_id):
     """Get a user by user ID."""
     user = User.query.get(user_id)
 
@@ -311,6 +311,17 @@ def reservation_delete(res_id):
 
 # room CRUD
 
+@app.route('/v1/room', methods=['GET'])
+@returns_json
+def room_list():
+    """List all rooms."""
+    rooms = []
+    for room in Room.query.all():
+        rooms.append(room.as_dict())
+
+    return json.dumps(rooms)
+
+
 @app.route('/v1/room', methods=['POST'])
 @returns_json
 def room_add():
@@ -341,7 +352,7 @@ def room_read(room_id):
 
     return json.dumps({
         'number': room.number,
-        'features': room.users,
+        'features': room.features,
         'reservations': room.reservations,
     })
 
