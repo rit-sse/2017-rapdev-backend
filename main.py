@@ -162,21 +162,24 @@ def team_read(token_user, team_id):
 
 @app.route('/v1/team/<int:team_id>', methods=['PUT'])
 @returns_json
-# TODO make this accept a user
-def team_update(team_id):
+@includes_user
+def team_update(token_user, team_id):
     """Update a team's name given name."""
     team = Team.query.get(team_id)
 
     if team is None:
         abort(404, 'team not found')
 
-    # TODO ensure the user is permitted to modify this team
+    if not json_param_exists('name'):
+        abort(400, 'one or more required parameter is missing')
 
-    name = request.json['name']  # TODO change this to json_param_exists
-    if name is None or len(name.strip()) == 0:
-        abort(400, 'name is invalid')
+    if not token_user.has_permission('team.update.elevated') or \
+            not (token_user.has_permission('team.update') and \
+                 team.has_member(token_user)):
+        abort(403, 'insufficient permissions to modify team')
 
     team.name = name
+    # TODO handle the case where this name is already taken
     get_db().commit()
 
     return '', 200
