@@ -18,3 +18,22 @@ This document contains definitions for the backend API.
     "token": "..."
 }
 ```
+
+## Users
+
+### GET `/api/v1/user/:user_id`
+
+#### Response
+```json
+{
+    "id": 8675309,
+    "name": "Jenny",
+    "email": "jenny@example.com",
+    "teams": [
+        ...
+    ],
+    "permissions": [
+        ...
+    ]
+}
+```

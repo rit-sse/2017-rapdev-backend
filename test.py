@@ -7,6 +7,7 @@ import json
 import main
 from models import User, Team
 
+
 class TestCase(unittest.TestCase):
 
     def setUp(self):
