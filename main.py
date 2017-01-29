@@ -417,7 +417,7 @@ def reservation_update(token_user, res_id):
 
     get_db().commit()
 
-    return '', 203
+    return '', 204
 
 
 @app.route('/v1/reservation/<int:res_id>', methods=['DELETE'])
@@ -431,7 +431,7 @@ def reservation_delete(res_id):
     get_db().delete(res)
     get_db().commit()
 
-    return '', 203
+    return '', 204
 
 
 # room CRUD
@@ -513,7 +513,7 @@ def room_update(room_id):
 
     get_db().commit()
 
-    return '', 203
+    return '', 204
 
 
 @app.route('/v1/room/<int:room_id>', methods=['DELETE'])
@@ -527,7 +527,7 @@ def room_delete(room_id):
     get_db().delete(room)
     get_db().commit()
 
-    return '', 203
+    return '', 204
 
 
 @app.route('/v1/reservation', methods=['GET'])
