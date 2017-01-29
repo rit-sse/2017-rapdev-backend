@@ -407,9 +407,10 @@ def reservation_update(token_user, res_id):
     if room is None:
         abort(400, 'invalid room id')
 
-    # TODO use parse_datetime to parse these. It will fail as-is.
-    start = request.json['start']
-    end = request.json['end']
+    start = parse_datetime(request.json['start'])
+    end = parse_datetime(request.json['end'])
+    if start is None or end is None:
+        abort(400, 'cannot parse start or end date')
 
     res = Reservation.query.get(res_id)
     if res is None:
