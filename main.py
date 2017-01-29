@@ -254,7 +254,7 @@ def team_user_add(token_user, team_id, user_id):
     user.teams.append(team)
     get_db().commit()
 
-    return '', 200
+    return '', 201
 
 
 @app.route('/v1/team/<int:team_id>/user/<int:user_id>', methods=['DELETE'])

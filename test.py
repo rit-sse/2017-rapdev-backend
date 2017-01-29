@@ -273,7 +273,7 @@ class TestCase(unittest.TestCase):
                 'Authorization': 'Bearer ' + team_creator.generate_auth_token()
             }
         )
-        self.assertEquals(rv.status_code, 200)
+        self.assertEquals(rv.status_code, 201)
 
         new_team = Team.query.filter_by(name='test').first()
         self.assertEquals(len(new_team.members), 2)
