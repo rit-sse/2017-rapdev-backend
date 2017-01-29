@@ -170,13 +170,16 @@ class Team(Base):
         """Create a team."""
         self.name = name
 
-    def as_dict(self, with_details=False):
-        """Convert to a dict, optionally including name and member details."""
+    def as_dict(self, for_user=None):
+        """Convert to a dict, optionally including name and member details
+        if the given user has the requisite permissions."""
         base = {
             "id": self.id,
             "type": self.team_type.name
         }
-        if with_details:
+        if for_user and for_user.has_permission('team.read.elevated') or \
+                (for_user.has_permission('team.read')
+                    and self.has_member(for_user)):
             base["name"] = self.name
             base["advance_time"] = self.team_type.advance_time
             members = []
@@ -272,22 +275,12 @@ class Reservation(Base):
         self.room = room
         self.created_by = created_by
 
-    def as_dict(self):
+    def as_dict(self, for_user=None):
         """Get the reservation as a dictionary."""
         return {
             'id': self.id,
-            'team': {
-                'id': self.team_id,
-                'name': self.team.name
-            },
-            'room': {
-                'id': self.room_id,
-                'number': self.room.number
-            },
-            'created_by': {
-                'id': self.created_by_id,
-                'name': self.created_by.name
-            },
-            'start': self.start,
-            'end': self.end
+            'team': self.team.as_dict(for_user=for_user),
+            'room': self.room.as_dict(include_features=False),
+            'start': self.start.isoformat(),
+            'end': self.end.isoformat()
         }

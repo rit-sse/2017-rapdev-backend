@@ -156,10 +156,7 @@ def team_read(token_user, team_id):
     if team is None:
         abort(404, 'team not found')
 
-    if token_user.has_permission('team.read.elevated') or team.has_member(token_user):
-        return json.dumps(team.as_dict(with_details=True))
-
-    return json.dumps(team.as_dict(with_details=False))
+    return json.dumps(team.as_dict(for_user=token_user))
 
 
 @app.route('/v1/team/<int:team_id>', methods=['PUT'])
@@ -361,19 +358,14 @@ def reservation_add(token_user):
 
 @app.route('/v1/reservation/<int:res_id>', methods=['GET'])
 @returns_json
-def reservation_read(res_id):
+@includes_user
+def reservation_read(token_user, res_id):
     """Get a reservation's info given ID."""
     res = Reservation.query.get(res_id)
     if res is None:
         abort(404, 'reservation not found')
 
-    return json.dumps({
-        'team': res.team,
-        'room': res.room,
-        'created_by': res.created_by,
-        'start': res.start,
-        'end': res.end
-    })
+    return json.dumps(res.as_dict(for_user=token_user))
 
 
 @app.route('/v1/reservation/<int:res_id>', methods=['PUT'])

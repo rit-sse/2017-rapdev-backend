@@ -308,6 +308,37 @@ class TestCase(unittest.TestCase):
             new_team = Team.query.filter_by(name='test').first()
             self.assertEquals(len(new_team.members), 1)
 
+    def test_reservation_read(self):
+        u = User.query.filter_by(name='student').first()
+        t = Team(name="testdelete")
+        t.members.append(u)
+        team_type = TeamType.query.filter_by(name='single').first()
+        t.team_type = team_type
+        room = Room.query.first()
+        reservation = Reservation(start=datetime.datetime.now(),
+                                  end=datetime.datetime.now() + datetime.timedelta(hours=1),
+                                  team=t,
+                                  room=room,
+                                  created_by=u
+                                  )
+        database.get_db().add(t)
+        database.get_db().add(reservation)
+        database.get_db().commit()
+        # test removing the user from the team
+        rv = self.app.get(
+            '/v1/reservation/' + str(reservation.id) ,
+            content_type='application/json',
+            headers={
+                'Authorization': 'Bearer ' + u.generate_auth_token()
+            }
+        )
+        self.assertEquals(rv.status_code, 200)
+        got = json.loads(rv.data)
+        self.assertEquals(got["team"]["name"], t.name)
+        self.assertEquals(got["start"], reservation.start.isoformat())
+        self.assertEquals(got["end"], reservation.end.isoformat())
+        self.assertEquals(got["room"]["number"], reservation.room.number)
+        self.assertEquals(got["id"], reservation.id)
 
 if __name__ == '__main__':
     unittest.main()
