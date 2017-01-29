@@ -192,7 +192,7 @@ def team_update(token_user, team_id):
     except IntegrityError:
         abort(409, 'team name is already in use')
 
-    return '', 200
+    return '', 203
 
 
 @app.route('/v1/team/<int:team_id>', methods=['DELETE'])
@@ -241,7 +241,7 @@ def team_user_add(team_id):
     user.teams.append(team)
     get_db().commit()
 
-    return '', 200
+    return '', 203
 
 
 @app.route('/v1/team_user/<int:team_id>', methods=['DELETE'])
@@ -263,7 +263,7 @@ def team_user_delete(team_id):
     user.teams.delete(team)
     get_db().commit()
 
-    return '', 200
+    return '', 203
 
 
 # reservation CRUD
@@ -396,7 +396,7 @@ def reservation_update(token_user, res_id):
 
     get_db().commit()
 
-    return '', 200
+    return '', 203
 
 
 @app.route('/v1/reservation/<int:res_id>', methods=['DELETE'])
@@ -410,7 +410,7 @@ def reservation_delete(res_id):
     get_db().delete(res)
     get_db().commit()
 
-    return '', 200
+    return '', 203
 
 
 # room CRUD
@@ -492,7 +492,7 @@ def room_update(room_id):
 
     get_db().commit()
 
-    return '', 200
+    return '', 203
 
 
 @app.route('/v1/room/<int:room_id>', methods=['DELETE'])
@@ -506,7 +506,7 @@ def room_delete(room_id):
     get_db().delete(room)
     get_db().commit()
 
-    return '', 200
+    return '', 203
 
 
 @app.route('/v1/reservation', methods=['GET'])
