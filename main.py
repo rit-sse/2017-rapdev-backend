@@ -1,5 +1,5 @@
 from flask import Flask, request, abort, Response
-from database import db_session
+from database import get_db
 from models import *
 from functools import wraps
 import json
@@ -9,10 +9,7 @@ from sqlalchemy import or_
 import datetime
 import iso8601
 
-
 app = Flask(__name__)
-
-secret = 'secret'
 
 
 def returns_json(f):
@@ -30,7 +27,7 @@ def returns_json(f):
 @app.teardown_appcontext
 def shutdown_session(exception=None):
     """End the database session."""
-    db_session.remove()
+    get_db().remove()
 
 
 @app.route('/v1/auth', methods=['POST'])
@@ -45,10 +42,10 @@ def auth():
 
     if user is None:
         user = User(username, username + '@')
-        db_session.add(user)
-        db_session.commit()
+        get_db().add(user)
+        get_db().commit()
 
-    encoded = jwt.encode({'id': user.id}, secret, algorithm='HS256')
+    encoded = user.generate_auth_token()
 
     return json.dumps({'token': encoded})
 
@@ -78,8 +75,8 @@ def team_add():
 
     team = Team(name=name)
 
-    db_session.add(team)
-    db_session.commit()
+    get_db().add(team)
+    get_db().commit()
 
     return '', 201
 
@@ -112,7 +109,7 @@ def team_update(team_id):
         abort(400)
 
     team.name = name
-    db_session.commit()
+    get_db().commit()
 
     return '', 200
 
@@ -125,8 +122,8 @@ def team_delete(team_id):
     if team is None:
         abort(400)
 
-    db_session.delete(team)
-    db_session.commit()
+    get_db().delete(team)
+    get_db().commit()
 
     return '', 200
 
@@ -150,7 +147,7 @@ def team_user_add(team_id):
         abort(400)
 
     user.teams.append(team)
-    db_session.commit()
+    get_db().commit()
 
     return '', 200
 
@@ -172,7 +169,7 @@ def team_user_delete(team_id):
         abort(400)
 
     user.teams.delete(team)
-    db_session.commit()
+    get_db().commit()
 
     return '', 200
 
@@ -221,8 +218,8 @@ def reservation_add():
     res = Reservation(team=team, room=room, created_by=creator,
                       start=start, end=end)
 
-    db_session.add(res)
-    db_session.commit()
+    get_db().add(res)
+    get_db().commit()
 
     return '', 201
 
@@ -293,7 +290,7 @@ def reservation_update(res_id):
     res.start = start
     res.end = end
 
-    db_session.commit()
+    get_db().commit()
 
     return '', 200
 
@@ -306,8 +303,8 @@ def reservation_delete(res_id):
     if res is None:
         abort(400)
 
-    db_session.delete(res)
-    db_session.commit()
+    get_db().delete(res)
+    get_db().commit()
 
     return '', 200
 
@@ -338,8 +335,8 @@ def room_add():
     room = Room(number=num)
 
     try:
-        db_session.add(room)
-        db_session.commit()
+        get_db().add(room)
+        get_db().commit()
     except IntegrityError:
         abort(400)
     return json.dumps(room.as_dict(include_features=False)), 201
@@ -389,7 +386,7 @@ def room_update(room_id):
         if f not in room.features:
             room.features.add(f)
 
-    db_session.commit()
+    get_db().commit()
 
     return '', 200
 
@@ -402,8 +399,8 @@ def room_delete(room_id):
     if room is None:
         abort(400)
 
-    db_session.delete(room)
-    db_session.commit()
+    get_db().delete(room)
+    get_db().commit()
 
     return '', 200
 
