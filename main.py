@@ -97,8 +97,15 @@ def auth():
     user = User.query.filter_by(name=username).first()
 
     if user is None:
-        user = User(username, username + '@')
+        user = User(username, username + '@example.com')
+        role = Role.query.filter_by(name='student').first()
+        user.role = role
+        team = Team(username)
+        team_type = TeamType.query.filter_by(name='single').first()
+        team.team_type = team_type
+        team.members.append(user)
         get_db().add(user)
+        get_db().add(team)
         get_db().commit()
 
     encoded = user.generate_auth_token()
