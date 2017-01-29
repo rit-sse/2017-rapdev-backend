@@ -99,7 +99,7 @@ class TestCase(unittest.TestCase):
             headers = {"Authorization": "Bearer " + u.generate_auth_token()}
         )
         self.assertEquals(rv.status_code, 201)
-        t = Team.query.first()
+        t = Team.query.filter_by(name='newteam1').first()
         self.assertEquals(t.name, 'newteam1')
         team_count = len(Team.query.all())
         self.assertEquals(team_count - team_count_original, 1)
@@ -221,7 +221,6 @@ class TestCase(unittest.TestCase):
 
     def test_add_basic_reservation(self):
         num_reservations_before = len(Reservation.query.all())
-        self.assertEquals(num_reservations_before, 0)  # This will fail if we seed reservations.
         student = User.query.filter_by(name='student').first()
         team_type = TeamType.query.filter_by(name='other_team').first()
         team = Team(name="testteam1")
@@ -256,7 +255,6 @@ class TestCase(unittest.TestCase):
     def test_add_reservation_conflict_override(self):
         """Create a reservation, and then override it. """
         num_reservations_before = len(Reservation.query.all())
-        self.assertEquals(num_reservations_before, 0)  # This will fail if we seed reservations.
         student = User.query.filter_by(name='student').first()
         student_auth_token = student.generate_auth_token()
         room = Room.query.first()

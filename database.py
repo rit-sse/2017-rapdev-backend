@@ -3,6 +3,7 @@
 from sqlalchemy import create_engine
 from sqlalchemy.orm import scoped_session, sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
+import datetime
 import os
 
 
@@ -80,21 +81,23 @@ def seed():
         get_db().add(f)
         feature_dict[feature] = f
 
+    rooms_dict = {}
     for room_number in rooms:
         r = models.Room(number=room_number)
         for feature in rooms[room_number]:
             f = feature_dict[feature]
             r.features.append(f)
+        rooms_dict[room_number] = r
         get_db().add(r)
 
     # the types of team
-    get_db().add(
-        models.TeamType(
-            name='single',
-            priority=4,
-            advance_time=7 * 2  # 2 weeks
-        )
+    teamtype_dict = {}
+    teamtype_dict['single'] = models.TeamType(
+        name='single',
+        priority=4,
+        advance_time=7 * 2  # 2 weeks
     )
+    get_db().add(teamtype_dict['single'])
     get_db().add(
         models.TeamType(
             name='other_team',
@@ -227,6 +230,7 @@ def seed():
             'role.update'
         ]
     }
+    users_dict = {}
     for role in roles:
         r = models.Role(name=role)
         for permission in roles[role]:
@@ -236,6 +240,22 @@ def seed():
         # seed a user TODO don't do this in production?
         u = models.User(name=role, email=role + "@example.com")
         u.roles.append(r)
+        team = models.Team(u.name)
+        team_type = teamtype_dict['single']
+        team.team_type = team_type
+        team.members.append(u)
+        u.teams.append(team)
+        users_dict[role] = u
+        get_db().add(team)
         get_db().add(u)
+
+    reservation = models.Reservation(
+        start = datetime.datetime.now() + datetime.timedelta(days=7),
+        end = datetime.datetime.now() + datetime.timedelta(days=7, hours=1),
+        team = users_dict['admin'].teams[0],
+        room = rooms_dict['1660'],
+        created_by = users_dict['admin']
+    )
+    get_db().add(reservation)
 
     get_db().commit()
