@@ -37,6 +37,13 @@ class User(Base):
                          secondary=join_table_user_teams,
                          back_populates="users")
 
+    @staticmethod
+    def verify_auth_token(token):
+        """Get the user from a JWT token."""
+        decoded = jwt.decode(token, secret, algorithms=['HS256'])
+        user = User.query.get(decoded['id'])
+        return user
+
     def __init__(self, name=None, email=None):
         """Create a user."""
         self.name = name
@@ -45,12 +52,6 @@ class User(Base):
     def generate_auth_token(self):
         """Create a JWT token with the user ID."""
         return jwt.encode({'id': self.id}, secret, algorithm='HS256')
-
-    def verify_auth_token(self, token):
-        """Get the user from a JWT token."""
-        decoded = jwt.decode(token, secret, algorithms=['HS256'])
-        user = User.query.get(decoded['id'])
-        return user
 
     def as_dict(self, include_teams_and_permissions=False):
         """
@@ -63,7 +64,7 @@ class User(Base):
             for role in self.roles:
                 for permission in role.permissions:
                     if permission not in all_permissions:
-                        all_permissions.add(permission)
+                        all_permissions.append(permission.name)
             return {
                 'id': self.id,
                 'name': self.name,

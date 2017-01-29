@@ -28,6 +28,7 @@ class TestCase(unittest.TestCase):
 
     def test_auth(self):
         """Test the authentication process."""
+        num_users_start = len(User.query.all())
         u = User(name="anthony", email="foo@bar.com")
         database.get_db().add(u)
         database.get_db().commit()
@@ -42,12 +43,11 @@ class TestCase(unittest.TestCase):
         self.assertTrue('token' in got)
         self.assertTrue(len(got['token']) > 0)
         num_users = len(User.query.all())
-        self.assertEquals(num_users, 1)
+        self.assertEquals(num_users - num_users_start, 1)
 
     def test_auth_makes_user(self):
         """Test that auth will create a new user."""
-        num_users = len(User.query.all())
-        self.assertEquals(num_users, 0)
+        num_users_start = len(User.query.all())
         rv = self.app.post(
             '/v1/auth',
             data='{"username":"bob"}',
@@ -58,12 +58,11 @@ class TestCase(unittest.TestCase):
         self.assertTrue('token' in got)
         self.assertTrue(len(got['token']) > 0)
         num_users = len(User.query.all())
-        self.assertEquals(num_users, 1)
+        self.assertEquals(num_users - num_users_start, 1)
 
     def test_user_not_found(self):
         """Test that get user returns a 404 for unknown users."""
-        num_users = len(User.query.all())
-        self.assertEquals(num_users, 0)
+        self.assertIsNone(User.query.get(100))
         rv = self.app.get(
             '/v1/user/100',
             content_type='application/json'

@@ -87,4 +87,118 @@ def seed():
         )
     )
 
+    # the permissions
+
+    perm_names = [
+        'team.create',
+        'team.create.elevated',
+        'team.delete',
+        'team.delete.elevated',
+        'team.read',
+        'team.read.elevated',
+        'team.update',
+        'team.update.elevated',
+        'reservation.create',
+        'reservation.delete',
+        'reservation.delete.elevated',
+        'reservation.read',
+        'reservation.update',
+        'reservation.update.elevated',
+        'room.update.elevated',
+        'room.create.elevated',
+        'room.read',
+        'room.delete.elevated',
+        'feature.create',
+        'feature.delete',
+        'feature.update',
+        'feature.read',
+        'role.create',
+        'role.delete',
+        'role.update'
+    ]
+    perm_dict = {}
+    for perm in perm_names:
+        p = models.Permission(name=perm)
+        get_db().add(p)
+        perm_dict[perm] = p
+
+    roles = {
+        'student': [
+            'team.create',
+            'team.delete',
+            'team.read',
+            'team.update',
+            'reservation.create',
+            'reservation.delete',
+            'reservation.read',
+            'reservation.update',
+            'room.read',
+            'feature.read'
+        ],
+        'labbie': [
+            'team.create',
+            'team.delete',
+            'team.read',
+            'team.update',
+            'reservation.create',
+            'reservation.delete',
+            'reservation.read',
+            'reservation.update',
+            'room.read',
+            'feature.read',
+            'team.read.elevated'
+        ],
+        'professor': [
+            'team.create',
+            'team.delete',
+            'team.read',
+            'team.update',
+            'reservation.create',
+            'reservation.delete',
+            'reservation.read',
+            'reservation.update',
+            'room.read',
+            'feature.read',
+            'team.create.elevated',
+            'team.read.elevated'
+        ],
+        'admin': [
+            'team.create',
+            'team.create.elevated',
+            'team.delete',
+            'team.delete.elevated',
+            'team.read',
+            'team.read.elevated',
+            'team.update',
+            'team.update.elevated',
+            'reservation.create',
+            'reservation.delete',
+            'reservation.delete.elevated',
+            'reservation.read',
+            'reservation.update',
+            'reservation.update.elevated',
+            'room.update.elevated',
+            'room.create.elevated',
+            'room.read',
+            'room.delete.elevated',
+            'feature.create',
+            'feature.delete',
+            'feature.update',
+            'feature.read',
+            'role.create',
+            'role.delete',
+            'role.update'
+        ]
+    }
+    for role in roles:
+        r = models.Role(name=role)
+        for permission in roles[role]:
+            p = perm_dict[permission]
+            r.permissions.append(p)
+        get_db().add(r)
+        # seed a user TODO don't do this in production?
+        u = models.User(name=role, email=role+"@example.com")
+        u.roles.append(r)
+        get_db().add(u)
+
     get_db().commit()
