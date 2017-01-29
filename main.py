@@ -62,7 +62,7 @@ def json_param_exists(param_name, json_root=-1):
 
     If a json_root is included, check within that. Otherwise, use request.json.
     Checks:
-    - Is the json_root "Truthy" (not None, not blank, etc.)?
+    - Is the json_root "Truth-y" (not None, not blank, etc.)?
     - Is the parameter name in the json_root?
     - Is the value not None?
     """
@@ -156,8 +156,7 @@ def team_read(token_user, team_id):
     if team is None:
         abort(404, 'team not found')
 
-    if (token_user.has_permission('team.read.elevated') or
-            any(map(lambda u: u.id == token_user.id, team.members))):
+    if token_user.has_permission('team.read.elevated') or team.has_member(token_user):
         return json.dumps(team.as_dict(with_details=True))
 
     return json.dumps(team.as_dict(with_details=False))
@@ -271,14 +270,14 @@ def team_user_delete(team_id):
 
 @app.route('/v1/reservation', methods=['POST'])
 @returns_json
-def reservation_add():
+@includes_user
+def reservation_add(token_user):
     """Add a reservation.
 
-    Uses the team ID, room ID, created by ID, start and end datetimes.
+    Uses the team ID, room ID, created by ID, start and end date times.
     """
     if not json_param_exists('team_id') or \
        not json_param_exists('room_id') or \
-       not json_param_exists('created_by_id') or \
        not json_param_exists('start') or \
        not json_param_exists('end'):
         abort(400, 'one or more required parameter is missing')
@@ -288,24 +287,50 @@ def reservation_add():
     if team is None:
         abort(400, 'invalid team id')
 
+    if not (token_user.has_permission('reservation.create') and team.has_member(token_user)):
+        abort(403)
+
     room_id = request.json['room_id']
     room = Room.query.get(room_id)
     if room is None:
         abort(400, 'invalid room id')
 
-    # TODO make this come from the submitted token
-    created_by_id = request.json['created_by_id']
-    created_by = User.query.get(created_by_id)
-    if created_by is None:
-        abort(400)
+    start = None
+    end = None
+    try:
+        start = iso8601.parse_date(request.json['start'])
+        end = iso8601.parse_date(request.json['end'])
+    except iso8601.ParseError:
+        abort(400, 'cannot parse start or end date')
 
-    start = request.json['start']
-    end = request.json['end']
+    if start >= end:
+        abort(400, "start time must be before end time")
 
-    res = Reservation(team=team, room=room, created_by=created_by,
+    res = Reservation(team=team, room=room, created_by=token_user,
                       start=start, end=end)
 
-    # TODO prevent double-booking
+    conflicting_reservations = Reservation.query.filter(
+        Reservation.end >= res.start,
+        Reservation.start <= res.end,
+        Reservation.room_id == res.room_id
+    ).all()
+
+    if len(conflicting_reservations) > 0:
+        can_override = True
+        for conflict in conflicting_reservations:
+            if conflict.team.team_type.priority <= team.team_type.priority:
+                can_override = False
+                break
+
+        attempt_override = False
+        if json_param_exists("override") and isinstance(request.json["override"], bool):
+            attempt_override = request.json["override"]
+
+        if attempt_override and can_override:
+            for conflict in conflicting_reservations:
+                get_db().delete(conflict)
+        else:
+            return json.dumps({"overridable": can_override}), 409
 
     get_db().add(res)
     get_db().commit()
@@ -348,6 +373,7 @@ def reservation_update(token_user, res_id):
     if room is None:
         abort(400, 'invalid room id')
 
+    # TODO use iso8601 to parse these. It will fail as-is.
     start = request.json['start']
     end = request.json['end']
 

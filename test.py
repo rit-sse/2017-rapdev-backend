@@ -219,5 +219,37 @@ class TestCase(unittest.TestCase):
         self.assertEquals(reservation_count_original, reservation_count_new)
 
 
+    def test_add_basic_reservation(self):
+        num_reservations_before = len(Reservation.query.all())
+        self.assertEquals(num_reservations_before, 0)  # This will fail if we seed reservations.
+        student = User.query.filter_by(name='student').first()
+        team_type = TeamType.query.filter_by(name='other_team').first()
+        team = Team(name="testteam1")
+        team.team_type = team_type
+        team.members.append(student)
+        database.get_db().add(team)
+        database.get_db().commit()
+
+        room = Room.query.first()
+
+        rv = self.app.post(
+            '/v1/reservation',
+            data=json.dumps({
+                "team_id": team.id,
+                "room_id": room.id,
+                "start": datetime.datetime.now().isoformat(),
+                "end": (datetime.datetime.now() + datetime.timedelta(hours=1)).isoformat()
+            }),
+            content_type='application/json',
+            headers={
+                "Authorization": "Bearer " + student.generate_auth_token()
+            }
+        )
+
+        num_reservations_after = len(Reservation.query.all())
+        self.assertEquals(rv.status_code, 201)
+        self.assertEquals(num_reservations_after - num_reservations_before, 1)
+
+
 if __name__ == '__main__':
     unittest.main()

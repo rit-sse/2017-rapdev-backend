@@ -33,3 +33,4 @@ DEFINITIONS:
 
 NOTES:
 'elevated' might mean 'any'
+admin might want 'reservation.create.elevated', which doesn't exist.
