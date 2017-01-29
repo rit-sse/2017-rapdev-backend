@@ -110,3 +110,146 @@ Otherwise:
 
 The property `advance_time` indicates the number of days in advance that a team
 can book a reservation.
+
+### PUT `/api/v1/team/:id`
+
+Updates the team's name.
+
+#### Body
+
+```json
+{
+    "name": "newteamname"
+}
+```
+
+#### Response
+
+On success, returns status code `204 No Content` and no body.
+
+### DELETE `/api/v1/team/:id`
+
+Deletes a team.
+
+#### Response
+
+On success, returns status code `204 No Content` and no body.
+
+## Team Members
+
+### POST `/api/v1/team/:team_id/user/:user_id`
+
+Adds a user to the given team
+
+#### Response
+
+On success, returns status code `204 No Content` and no body.
+
+### DELETE `/api/v1/team/:team_id/user/:user_id`
+
+Removes a user from the given team
+
+#### Response
+
+On success, returns status code `204 No Content` and no body.
+
+## Reservations
+
+### POST `/api/v1/reservation`
+
+Creates a new reservation.
+
+#### Body
+
+```json
+{
+    "team_id": 203,
+    "room_id": 102,
+    "start": "2017-01-29T16:02:23.913000+05:00",
+    "end": "2017-01-29T17:02:56.301000+05:00",
+    "override": true
+}
+```
+
+Property `override` is optional. If present, will attempt to remove any lower-priority reservations which exist within this time slot for this room.
+
+#### Response
+
+On success, returns status code `201 Created` and no body.
+
+On conflict, returns status code `409 Conflict` and the following body indicating whether retrying with `override`
+set to `true` will help.
+
+```json
+{
+    "overridable": true
+}
+```
+
+### GET `/api/v1/reservation/:id`
+
+Reads a reservation.
+
+#### Response
+
+If the user has permission to see the reservation's team information, returns:
+
+```json
+{
+    "id": 102,
+    "team": {
+        "id": 300,
+        "name": "teamname",
+        "type": "teamtype",
+        "advance_time": 14,
+        "members": [
+            {
+                "id": 201,
+                "name": "John"
+            }
+        ]
+    },
+    "room": {
+        "id": 401,
+        "number": "1655"
+    },
+    "start": "2017-01-29T16:02:23.913000+05:00",
+    "end": "2017-01-29T17:02:56.301000+05:00"
+}
+```
+
+Otherwise, returns:
+
+```json
+{
+    "id": 102,
+    "team": {
+        "id": 300,
+        "type": "teamtype",
+    },
+    "room": {
+        "id": 401,
+        "number": "1655"
+    },
+    "start": "2017-01-29T16:02:23.913000",
+    "end": "2017-01-29T17:02:56.301000"
+}
+```
+
+### PUT `/api/v1/reservation/:id`
+
+Updates a reservation's time.
+
+#### Body
+
+```json
+{
+    "room_id": 102,
+    "start": "2017-01-29T16:02:23.913000+05:00",
+    "end": "2017-01-29T17:02:56.301000+05:00"
+}
+```
+
+#### Response
+
+On success, returns status code `204 No Content`.

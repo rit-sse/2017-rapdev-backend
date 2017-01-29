@@ -212,7 +212,7 @@ class TestCase(unittest.TestCase):
                 "Authorization": "Bearer " + u.generate_auth_token()
             }
         )
-        self.assertEquals(rv.status_code, 203)
+        self.assertEquals(rv.status_code, 204)
         team_count_new = len(Team.query.all())
         reservation_count_new = len(Reservation.query.all())
         self.assertEquals(team_count_original, team_count_new)
@@ -345,6 +345,239 @@ class TestCase(unittest.TestCase):
 
         num_reservations_after = len(Reservation.query.all())
         self.assertEquals(num_reservations_after - num_reservations_before, 1)
+
+    def test_add_team_member_valid(self):
+        """Test that users can be added from teams."""
+        team_creator = User.query.filter_by(name='student').first()
+        t = Team(name='test')
+        t.members.append(team_creator)
+        team_type = TeamType.query.filter_by(name='other_team').first()
+        t.team_type = team_type
+        second_user = User.query.filter_by(name='labbie').first()
+
+        database.get_db().add(t)
+        database.get_db().commit()
+
+        team_id = t.id
+        second_user_id = second_user.id
+
+        # test adding the user to the team
+        rv = self.app.post(
+            '/v1/team/' + str(team_id) + '/user/' + str(second_user_id),
+            content_type='application/json',
+            headers={
+                'Authorization': 'Bearer ' + team_creator.generate_auth_token()
+            }
+        )
+        self.assertEquals(rv.status_code, 201)
+
+        new_team = Team.query.filter_by(name='test').first()
+        self.assertEquals(len(new_team.members), 2)
+
+
+    def test_remove_team_member_valid(self):
+            """Test that users can be deleted from teams."""
+            team_creator = User.query.filter_by(name='student').first()
+            t = Team(name='test')
+            t.members.append(team_creator)
+            team_type = TeamType.query.filter_by(name='other_team').first()
+            t.team_type = team_type
+            second_user = User.query.filter_by(name='labbie').first()
+            t.members.append(second_user)
+
+            database.get_db().add(t)
+            database.get_db().commit()
+
+            team_id = t.id
+            second_user_id = second_user.id
+
+            # test removing the user from the team
+            rv = self.app.delete(
+                '/v1/team/' + str(team_id) + '/user/' + str(second_user_id),
+                content_type='application/json',
+                headers={
+                    'Authorization': 'Bearer ' + team_creator.generate_auth_token()
+                }
+            )
+            self.assertEquals(rv.status_code, 204)
+
+            new_team = Team.query.filter_by(name='test').first()
+            self.assertEquals(len(new_team.members), 1)
+
+    def test_reservation_read(self):
+        u = User.query.filter_by(name='student').first()
+        t = Team(name="testdelete")
+        t.members.append(u)
+        team_type = TeamType.query.filter_by(name='single').first()
+        t.team_type = team_type
+        room = Room.query.first()
+        reservation = Reservation(start=datetime.datetime.now(),
+                                  end=datetime.datetime.now() + datetime.timedelta(hours=1),
+                                  team=t,
+                                  room=room,
+                                  created_by=u
+                                  )
+        database.get_db().add(t)
+        database.get_db().add(reservation)
+        database.get_db().commit()
+        # test removing the user from the team
+        rv = self.app.get(
+            '/v1/reservation/' + str(reservation.id) ,
+            content_type='application/json',
+            headers={
+                'Authorization': 'Bearer ' + u.generate_auth_token()
+            }
+        )
+        self.assertEquals(rv.status_code, 200)
+        got = json.loads(rv.data)
+        self.assertEquals(got["team"]["name"], t.name)
+        self.assertEquals(got["start"], reservation.start.isoformat())
+        self.assertEquals(got["end"], reservation.end.isoformat())
+        self.assertEquals(got["room"]["number"], reservation.room.number)
+        self.assertEquals(got["id"], reservation.id)
+
+
+    def test_room_read(self):
+        """ test that querying an existing room returns json data """
+        room = Room.query.first()
+
+        rv = self.app.get(
+            '/v1/room/' + str(room.id),
+            content_type='application/json',
+        )
+        got = json.loads(rv.data)
+        self.assertTrue('features' in got)
+        self.assertTrue(len(got['features']) > 0)
+
+
+    def test_room_not_found(self):
+        """Test that get room returns a 404 for unknown rooms."""
+        self.assertIsNone(Room.query.get(100))
+        rv = self.app.get(
+            '/v1/room/100',
+            content_type='application/json'
+        )
+        self.assertEquals(rv.status_code, 404)
+
+
+    def test_add_team_member_invalid_not_on_team(self):
+        """Test that users can be added from teams."""
+        team_creator = User.query.filter_by(name='student').first()
+        t = Team(name='test')
+        t.members.append(team_creator)
+        team_type = TeamType.query.filter_by(name='other_team').first()
+        t.team_type = team_type
+        second_user = User.query.filter_by(name='labbie').first()
+
+        database.get_db().add(t)
+        database.get_db().commit()
+
+        team_id = t.id
+        second_user_id = second_user.id
+
+        # test adding the user to the team
+        rv = self.app.post(
+            '/v1/team/' + str(team_id) + '/user/' + str(second_user_id),
+            content_type='application/json',
+            headers={
+                'Authorization': 'Bearer ' + second_user.generate_auth_token()
+            }
+        )
+        self.assertEquals(rv.status_code, 403)
+
+        new_team = Team.query.filter_by(name='test').first()
+        self.assertEquals(len(new_team.members), 1)
+
+
+    def test_add_team_member_invalid_single_team(self):
+        """Test that users can be added from teams."""
+        team_creator = User.query.filter_by(name='student').first()
+        t = Team(name='test')
+        t.members.append(team_creator)
+        team_type = TeamType.query.filter_by(name='single').first()
+        t.team_type = team_type
+        second_user = User.query.filter_by(name='labbie').first()
+
+        database.get_db().add(t)
+        database.get_db().commit()
+
+        team_id = t.id
+        second_user_id = second_user.id
+
+        # test adding the user to the team
+        rv = self.app.post(
+            '/v1/team/' + str(team_id) + '/user/' + str(second_user_id),
+            content_type='application/json',
+            headers={
+                'Authorization': 'Bearer ' + team_creator.generate_auth_token()
+            }
+        )
+        self.assertEquals(rv.status_code, 400)
+
+        new_team = Team.query.filter_by(name='test').first()
+        self.assertEquals(len(new_team.members), 1)
+
+
+    def test_add_team_member_invalid_user_id(self):
+        """Test that users can be added from teams."""
+        team_creator = User.query.filter_by(name='student').first()
+        t = Team(name='test')
+        t.members.append(team_creator)
+        team_type = TeamType.query.filter_by(name='other_team').first()
+        t.team_type = team_type
+        second_user = User.query.filter_by(name='labbie').first()
+
+        database.get_db().add(t)
+        database.get_db().commit()
+
+        team_id = t.id
+        second_user_id = second_user.id
+
+        self.assertIsNone(User.query.get(100))
+
+        # test adding the user to the team
+        rv = self.app.post(
+            '/v1/team/' + str(team_id) + '/user/' + '100',
+            content_type='application/json',
+            headers={
+                'Authorization': 'Bearer ' + team_creator.generate_auth_token()
+            }
+        )
+        self.assertEquals(rv.status_code, 400)
+
+        new_team = Team.query.filter_by(name='test').first()
+        self.assertEquals(len(new_team.members), 1)
+
+
+    def test_add_team_member_invalid_already_in_team(self):
+        """Test that users can be added from teams."""
+        team_creator = User.query.filter_by(name='student').first()
+        t = Team(name='test')
+        t.members.append(team_creator)
+        team_type = TeamType.query.filter_by(name='other_team').first()
+        t.team_type = team_type
+        second_user = User.query.filter_by(name='labbie').first()
+        t.members.append(second_user)
+
+        database.get_db().add(t)
+        database.get_db().commit()
+
+        team_id = t.id
+        second_user_id = second_user.id
+
+        # test adding the user to the team
+        rv = self.app.post(
+            '/v1/team/' + str(team_id) + '/user/' + str(second_user_id),
+            content_type='application/json',
+            headers={
+                'Authorization': 'Bearer ' + team_creator.generate_auth_token()
+            }
+        )
+        self.assertEquals(rv.status_code, 409)
+
+        new_team = Team.query.filter_by(name='test').first()
+        self.assertEquals(len(new_team.members), 2)
+
 
 if __name__ == '__main__':
     unittest.main()

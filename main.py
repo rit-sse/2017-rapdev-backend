@@ -108,6 +108,7 @@ def auth():
 
 @app.route('/v1/user/<int:user_id>')
 @returns_json
+#TODO secure this?
 def user_read(user_id):
     """Get a user by user ID."""
     user = User.query.get(user_id)
@@ -163,10 +164,7 @@ def team_read(token_user, team_id):
     if team is None:
         abort(404, 'team not found')
 
-    if token_user.has_permission('team.read.elevated') or team.has_member(token_user):
-        return json.dumps(team.as_dict(with_details=True))
-
-    return json.dumps(team.as_dict(with_details=False))
+    return json.dumps(team.as_dict(for_user=token_user))
 
 
 @app.route('/v1/team/<int:team_id>', methods=['PUT'])
@@ -199,7 +197,7 @@ def team_update(token_user, team_id):
     except IntegrityError:
         abort(409, 'team name is already in use')
 
-    return '', 200
+    return '', 204
 
 
 @app.route('/v1/team/<int:team_id>', methods=['DELETE'])
@@ -224,53 +222,74 @@ def team_delete(token_user, team_id):
     get_db().delete(team)
     get_db().commit()
 
-    return '', 203
+    return '', 204
 
 
 # add/remove user to team
 
-@app.route('/v1/team_user/<int:team_id>', methods=['POST'])
+@app.route('/v1/team/<int:team_id>/user/<int:user_id>', methods=['POST'])
 @returns_json
-def team_user_add(team_id):
+@includes_user
+def team_user_add(token_user, team_id, user_id):
     """Add a user to a team given the team and user IDs."""
     team = Team.query.get(team_id)
     if team is None:
         abort(404, 'team not found')
 
-    user_id = request.json['user_id']
-    if user_id is None or len(user_id.strip()) == 0:
-        abort(400, 'invalid user id')
+    # check for permissions to update the team
+    if not (token_user.has_permission('team.update.elevated') or
+                (token_user.has_permission('team.update') and
+                         team.has_member(token_user)
+                )
+            ):
+        abort(403, 'insufficient permissions to add user to team')
+
+
+    # don't allow adding to 'single' teams
+    if team.team_type == TeamType.query.filter_by(name='single').first():
+        abort(400, 'cannot add a user to a "single" team')
 
     user = User.query.get(user_id)
     if user is None:
         abort(400, 'invalid user id')
 
+    if team.has_member(user):
+        abort(409, 'user already in team')
+
     user.teams.append(team)
     get_db().commit()
 
-    return '', 200
+    return '', 201
 
 
-@app.route('/v1/team_user/<int:team_id>', methods=['DELETE'])
+@app.route('/v1/team/<int:team_id>/user/<int:user_id>', methods=['DELETE'])
 @returns_json
-def team_user_delete(team_id):
+@includes_user
+def team_user_delete(token_user, team_id, user_id):
     """Remove a user from a team given the team and user IDs."""
     team = Team.query.get(team_id)
     if team is None:
         abort(404, 'team not found')
 
-    user_id = request.json['user_id']
-    if user_id is None or len(user_id.strip()) == 0:
-        abort(400, 'invalid user id')
+    if len(team.members) == 1:
+        abort(400, 'only one member on team -- use team delete instead')
+
+    # check for permissions to delete the team
+    if not (token_user.has_permission('team.update.elevated') or
+                (token_user.has_permission('team.update') and
+                         team.has_member(token_user)
+                )
+            ):
+        abort(403, 'insufficient permissions to delete user from team')
 
     user = User.query.get(user_id)
     if user is None:
         abort(400, 'invalid user id')
 
-    user.teams.delete(team)
+    user.teams.remove(team)
     get_db().commit()
 
-    return '', 200
+    return '', 204
 
 
 # reservation CRUD
@@ -344,19 +363,14 @@ def reservation_add(token_user):
 
 @app.route('/v1/reservation/<int:res_id>', methods=['GET'])
 @returns_json
-def reservation_read(res_id):
+@includes_user
+def reservation_read(token_user, res_id):
     """Get a reservation's info given ID."""
     res = Reservation.query.get(res_id)
     if res is None:
         abort(404, 'reservation not found')
 
-    return json.dumps({
-        'team': res.team,
-        'room': res.room,
-        'created_by': res.created_by,
-        'start': res.start,
-        'end': res.end
-    })
+    return json.dumps(res.as_dict(for_user=token_user))
 
 
 @app.route('/v1/reservation/<int:res_id>', methods=['PUT'])
@@ -400,11 +414,12 @@ def reservation_update(token_user, res_id):
 
     get_db().commit()
 
-    return '', 200
+    return '', 204
 
 
 @app.route('/v1/reservation/<int:res_id>', methods=['DELETE'])
 @returns_json
+#TODO secure this
 def reservation_delete(res_id):
     """Remove a reservation given its ID."""
     res = Reservation.query.get(res_id)
@@ -414,7 +429,7 @@ def reservation_delete(res_id):
     get_db().delete(res)
     get_db().commit()
 
-    return '', 200
+    return '', 204
 
 
 # room CRUD
@@ -432,14 +447,16 @@ def room_list():
 
 @app.route('/v1/room', methods=['POST'])
 @returns_json
+#TODO secure this
 def room_add():
     """Add a room, given the room number."""
-    if not request.json or 'number' not in request.json:
-        abort(400, 'one or more required parameter is missing')
-    num = request.json['number']
-    if num is None or len(num.strip()) == 0:
+    if not json_param_exists('number'):
         abort(400, 'invalid room number')
 
+    if not isinstance(request.json['number'], str):
+        abort(400, 'room number must be string')
+
+    num = request.json['number']
     room = Room(number=num)
 
     try:
@@ -458,15 +475,12 @@ def room_read(room_id):
     if room is None:
         abort(404, 'room not found')
 
-    return json.dumps({
-        'number': room.number,
-        'features': room.features,
-        'reservations': room.reservations,
-    })
+    return json.dumps(room.as_dict(include_features=True))
 
 
 @app.route('/v1/room/<int:room_id>', methods=['PUT'])
 @returns_json
+#TODO secure this
 def room_update(room_id):
     """Update a room given its room number and feature list."""
     room = Room.query.get(room_id)
@@ -474,15 +488,16 @@ def room_update(room_id):
     if room is None:
         abort(404, 'room not found')
 
-    number = request.json['number']
-    if number is None or len(number.strip()) == 0:
+    if not json_param_exists('number'):
         abort(400, 'invalid room number')
 
+    number = request.json['number']
     room.number = number
 
-    features = request.json['features']
-    if features is None:
+    if not json_param_exists('features'):
         abort(400, 'one or more required parameter is missing')
+
+    features = request.json['features']
 
     # remove relationships not in features
     for r in room.features:
@@ -496,11 +511,12 @@ def room_update(room_id):
 
     get_db().commit()
 
-    return '', 200
+    return '', 204
 
 
 @app.route('/v1/room/<int:room_id>', methods=['DELETE'])
 @returns_json
+#TODO secure this
 def room_delete(room_id):
     """Remove a room given its ID."""
     room = Room.query.get(room_id)
@@ -510,7 +526,19 @@ def room_delete(room_id):
     get_db().delete(room)
     get_db().commit()
 
-    return '', 200
+    return '', 204
+
+
+@app.route('/v1/feature', methods=['GET'])
+@returns_json
+def feature_list():
+    """List all rooms."""
+    features = []
+    for feature in RoomFeature.query.all():
+        features.append(feature.as_dict())
+
+    return json.dumps(features)
+
 
 
 @app.route('/v1/reservation', methods=['GET'])
