@@ -443,12 +443,13 @@ def room_list():
 @returns_json
 def room_add():
     """Add a room, given the room number."""
-    if not request.json or 'number' not in request.json:
-        abort(400, 'one or more required parameter is missing')
-    num = request.json['number']
-    if num is None or len(num.strip()) == 0:
+    if not json_param_exists('number'):
         abort(400, 'invalid room number')
 
+    if not isinstance(request.json['number'], str):
+        abort(400, 'room number must be string')
+
+    num = request.json['number']
     room = Room(number=num)
 
     try:
@@ -467,11 +468,7 @@ def room_read(room_id):
     if room is None:
         abort(404, 'room not found')
 
-    return json.dumps({
-        'number': room.number,
-        'features': room.features,
-        'reservations': room.reservations,
-    })
+    return json.dumps(room.as_dict(include_features=True))
 
 
 @app.route('/v1/room/<int:room_id>', methods=['PUT'])
@@ -483,15 +480,16 @@ def room_update(room_id):
     if room is None:
         abort(404, 'room not found')
 
-    number = request.json['number']
-    if number is None or len(number.strip()) == 0:
+    if not json_param_exists('number'):
         abort(400, 'invalid room number')
 
+    number = request.json['number']
     room.number = number
 
-    features = request.json['features']
-    if features is None:
+    if not json_param_exists('features'):
         abort(400, 'one or more required parameter is missing')
+
+    features = request.json['features']
 
     # remove relationships not in features
     for r in room.features:
@@ -520,6 +518,18 @@ def room_delete(room_id):
     get_db().commit()
 
     return '', 204
+
+
+@app.route('/v1/feature', methods=['GET'])
+@returns_json
+def feature_list():
+    """List all rooms."""
+    features = []
+    for feature in RoomFeature.query.all():
+        features.append(feature.as_dict())
+
+    return json.dumps(features)
+
 
 
 @app.route('/v1/reservation', methods=['GET'])

@@ -225,10 +225,14 @@ class Room(Base):
         Optionally include the features of the room.
         """
         if include_features:
+            feature_list = []
+            for feature in self.features:
+                feature_list.append(feature.as_dict())
+
             return {
                 'id': self.id,
                 'number': self.number,
-                'features': self.features,
+                'features': feature_list,
             }
         else:
             return {
@@ -250,6 +254,12 @@ class RoomFeature(Base):
     def __init__(self, name=None):
         """Create a feature for a room."""
         self.name = name
+
+    def as_dict(self):
+        return {
+            'id': self.id,
+            'name': self.name
+        }
 
 
 class Reservation(Base):

@@ -57,10 +57,34 @@ def seed():
     """Seed the database with sample data."""
     import models
     # the rooms
-    roomnumbers = ['1560', '1561', '1562', '1563', '1564',
-                   '1565', '1665', '1663', '1662', '1661', '1660']
-    for roomnumber in roomnumbers:
-        r = models.Room(number=roomnumber)
+
+    room_features = ['Projector', 'TV', 'Webcam', 'Phone Line']
+
+    rooms = {
+               '1560': ['Projector'],
+               '1561': ['TV', 'Webcam'],
+               '1562': ['Projector'],
+               '1563': ['TV'],
+               '1564': ['Projector'],
+               '1565': ['TV', 'Webcam'],
+               '1665': ['TV', 'Webcam'],
+               '1663': ['TV'],
+               '1662': ['Projector'],
+               '1661': ['Projector'],
+               '1660': ['Projector']
+            }
+
+    feature_dict = {}
+    for feature in room_features:
+        f = models.RoomFeature(name=feature)
+        get_db().add(f)
+        feature_dict[feature] = f
+
+    for room_number in rooms:
+        r = models.Room(number=room_number)
+        for feature in rooms[room_number]:
+            f = feature_dict[feature]
+            r.features.append(f)
         get_db().add(r)
 
     # the types of team
