@@ -126,15 +126,14 @@ def user_read(user_id):
     return json.dumps(user.as_dict(include_teams_and_permissions=True))
 
 
-@app.route('/v1/user/<string:user_name>', methods=['GET'])
+@app.route('/v1/user', methods=['GET'])
 @returns_json
-def user_search_partial(user_name):
+def user_search_partial():
     """Get a user id from a partial user name."""
-    if len(user_name) < 1:
-        abort(400, "no user name supplied")
+    username = request.args.get('search') or ''
 
     ret = []
-    for user in User.query.filter(User.name.ilike(user_name + "%")):
+    for user in User.query.filter(User.name.ilike(username + "%")):
         ret.append({
             "id": user.id,
             "name": user.name

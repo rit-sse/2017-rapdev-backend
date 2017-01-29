@@ -51,7 +51,7 @@ Reads information about a supplied user.
 }
 ```
 
-### GET `/api/v1/user/:user_name_partial`
+### GET `/api/v1/user?search=:user_name_partial`
 
 Searches for a user by the partially given name
 
