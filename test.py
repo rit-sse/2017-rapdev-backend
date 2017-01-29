@@ -5,9 +5,10 @@ import database
 import unittest
 import tempfile
 import json
+import datetime
 
 import main
-from models import User, Team, TeamType
+from models import *
 
 
 class TestCase(unittest.TestCase):
@@ -182,6 +183,41 @@ class TestCase(unittest.TestCase):
         token = u.generate_auth_token()
         got = User.verify_auth_token(token)
         self.assertIsNone(got)
+
+
+    def test_delete_team(self):
+        """Test that teams can be deleted and their associated reservations will be deleted."""
+        team_count_original = len(Team.query.all())
+        reservation_count_original = len(Reservation.query.all())
+        u = User.query.filter_by(name='student').first()
+        t = Team(name="testdelete")
+        t.members.append(u)
+        team_type = TeamType.query.filter_by(name='single').first()
+        t.team_type = team_type
+        room = Room.query.first()
+        reservation = Reservation(start=datetime.datetime.now(),
+                                  end=datetime.datetime.now() + datetime.timedelta(hours=1),
+                                  team=t,
+                                  room=room,
+                                  created_by=u
+                                  )
+        database.get_db().add(t)
+        database.get_db().add(reservation)
+        database.get_db().commit()
+
+        rv = self.app.delete(
+            '/v1/team/' + str(t.id),
+            content_type='application/json',
+            headers={
+                "Authorization": "Bearer " + u.generate_auth_token()
+            }
+        )
+        self.assertEquals(rv.status_code, 203)
+        team_count_new = len(Team.query.all())
+        reservation_count_new = len(Reservation.query.all())
+        self.assertEquals(team_count_original, team_count_new)
+        self.assertEquals(reservation_count_original, reservation_count_new)
+
 
 if __name__ == '__main__':
     unittest.main()

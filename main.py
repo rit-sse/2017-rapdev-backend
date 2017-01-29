@@ -137,9 +137,12 @@ def team_add(token_user):
     team = Team(name=name)
     team.team_type = team_type
 
-    get_db().add(team)
-    # TODO if unique check on name fails this will throw an exception
-    get_db().commit()
+    try:
+        get_db().add(team)
+        get_db().commit()
+    except IntegrityError:
+        abort(409, 'team name is already in use')
+
 
     return '', 201
 
@@ -173,34 +176,49 @@ def team_update(token_user, team_id):
     if not json_param_exists('name'):
         abort(400, 'one or more required parameter is missing')
 
-    if not token_user.has_permission('team.update.elevated') or \
-            not (token_user.has_permission('team.update') and \
-                 team.has_member(token_user)):
+    name = request.json['name']
+
+    if not (token_user.has_permission('team.update.elevated') or
+                (token_user.has_permission('team.update') and
+                         team.has_member(token_user)
+                )
+            ):
         abort(403, 'insufficient permissions to modify team')
 
     team.name = name
-    # TODO handle the case where this name is already taken
-    get_db().commit()
+
+    try:
+        get_db().add(team)
+        get_db().commit()
+    except IntegrityError:
+        abort(409, 'team name is already in use')
 
     return '', 200
 
 
 @app.route('/v1/team/<int:team_id>', methods=['DELETE'])
 @returns_json
-# TODO make this accept a user
-def team_delete(team_id):
+@includes_user
+def team_delete(token_user, team_id):
     """Delete a team given its ID."""
     team = Team.query.get(team_id)
     if team is None:
         abort(404, 'team not found')
 
-    # TODO ensure the user is permitted to delete this team
-    # TODO deschedule any reservations this team
+    # check for permissions to delete the team
+    if not (token_user.has_permission('team.delete.elevated') or
+                (token_user.has_permission('team.delete') and
+                         team.has_member(token_user)
+                )
+            ):
+        abort(403, 'insufficient permissions to delete team')
 
+    # deschedule reservations for the team then delete the team
+    Reservation.query.filter_by(team_id=team.id).delete()
     get_db().delete(team)
     get_db().commit()
 
-    return '', 200
+    return '', 203
 
 
 # add/remove user to team
