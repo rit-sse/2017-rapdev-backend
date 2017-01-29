@@ -101,6 +101,7 @@ def auth():
 
 @app.route('/v1/user/<int:user_id>')
 @returns_json
+#TODO secure this?
 def user_read(user_id):
     """Get a user by user ID."""
     user = User.query.get(user_id)
@@ -414,6 +415,7 @@ def reservation_update(token_user, res_id):
 
 @app.route('/v1/reservation/<int:res_id>', methods=['DELETE'])
 @returns_json
+#TODO secure this
 def reservation_delete(res_id):
     """Remove a reservation given its ID."""
     res = Reservation.query.get(res_id)
@@ -441,6 +443,7 @@ def room_list():
 
 @app.route('/v1/room', methods=['POST'])
 @returns_json
+#TODO secure this
 def room_add():
     """Add a room, given the room number."""
     if not json_param_exists('number'):
@@ -473,6 +476,7 @@ def room_read(room_id):
 
 @app.route('/v1/room/<int:room_id>', methods=['PUT'])
 @returns_json
+#TODO secure this
 def room_update(room_id):
     """Update a room given its room number and feature list."""
     room = Room.query.get(room_id)
@@ -508,6 +512,7 @@ def room_update(room_id):
 
 @app.route('/v1/room/<int:room_id>', methods=['DELETE'])
 @returns_json
+#TODO secure this
 def room_delete(room_id):
     """Remove a room given its ID."""
     room = Room.query.get(room_id)

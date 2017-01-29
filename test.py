@@ -363,5 +363,125 @@ class TestCase(unittest.TestCase):
         )
         self.assertEquals(rv.status_code, 404)
 
+
+    def test_add_team_member_invalid_not_on_team(self):
+        """Test that users can be added from teams."""
+        team_creator = User.query.filter_by(name='student').first()
+        t = Team(name='test')
+        t.members.append(team_creator)
+        team_type = TeamType.query.filter_by(name='other_team').first()
+        t.team_type = team_type
+        second_user = User.query.filter_by(name='labbie').first()
+
+        database.get_db().add(t)
+        database.get_db().commit()
+
+        team_id = t.id
+        second_user_id = second_user.id
+
+        # test adding the user to the team
+        rv = self.app.post(
+            '/v1/team/' + str(team_id) + '/user/' + str(second_user_id),
+            content_type='application/json',
+            headers={
+                'Authorization': 'Bearer ' + second_user.generate_auth_token()
+            }
+        )
+        self.assertEquals(rv.status_code, 403)
+
+        new_team = Team.query.filter_by(name='test').first()
+        self.assertEquals(len(new_team.members), 1)
+
+
+    def test_add_team_member_invalid_single_team(self):
+        """Test that users can be added from teams."""
+        team_creator = User.query.filter_by(name='student').first()
+        t = Team(name='test')
+        t.members.append(team_creator)
+        team_type = TeamType.query.filter_by(name='single').first()
+        t.team_type = team_type
+        second_user = User.query.filter_by(name='labbie').first()
+
+        database.get_db().add(t)
+        database.get_db().commit()
+
+        team_id = t.id
+        second_user_id = second_user.id
+
+        # test adding the user to the team
+        rv = self.app.post(
+            '/v1/team/' + str(team_id) + '/user/' + str(second_user_id),
+            content_type='application/json',
+            headers={
+                'Authorization': 'Bearer ' + team_creator.generate_auth_token()
+            }
+        )
+        self.assertEquals(rv.status_code, 400)
+
+        new_team = Team.query.filter_by(name='test').first()
+        self.assertEquals(len(new_team.members), 1)
+
+
+    def test_add_team_member_invalid_user_id(self):
+        """Test that users can be added from teams."""
+        team_creator = User.query.filter_by(name='student').first()
+        t = Team(name='test')
+        t.members.append(team_creator)
+        team_type = TeamType.query.filter_by(name='other_team').first()
+        t.team_type = team_type
+        second_user = User.query.filter_by(name='labbie').first()
+
+        database.get_db().add(t)
+        database.get_db().commit()
+
+        team_id = t.id
+        second_user_id = second_user.id
+
+        self.assertIsNone(User.query.get(100))
+
+        # test adding the user to the team
+        rv = self.app.post(
+            '/v1/team/' + str(team_id) + '/user/' + '100',
+            content_type='application/json',
+            headers={
+                'Authorization': 'Bearer ' + team_creator.generate_auth_token()
+            }
+        )
+        self.assertEquals(rv.status_code, 400)
+
+        new_team = Team.query.filter_by(name='test').first()
+        self.assertEquals(len(new_team.members), 1)
+
+
+    def test_add_team_member_invalid_already_in_team(self):
+        """Test that users can be added from teams."""
+        team_creator = User.query.filter_by(name='student').first()
+        t = Team(name='test')
+        t.members.append(team_creator)
+        team_type = TeamType.query.filter_by(name='other_team').first()
+        t.team_type = team_type
+        second_user = User.query.filter_by(name='labbie').first()
+        t.members.append(second_user)
+
+        database.get_db().add(t)
+        database.get_db().commit()
+
+        team_id = t.id
+        second_user_id = second_user.id
+
+        # test adding the user to the team
+        rv = self.app.post(
+            '/v1/team/' + str(team_id) + '/user/' + str(second_user_id),
+            content_type='application/json',
+            headers={
+                'Authorization': 'Bearer ' + team_creator.generate_auth_token()
+            }
+        )
+        self.assertEquals(rv.status_code, 409)
+
+        new_team = Team.query.filter_by(name='test').first()
+        self.assertEquals(len(new_team.members), 2)
+
+
 if __name__ == '__main__':
     unittest.main()
