@@ -68,7 +68,7 @@ def team_add(team_id):
     """
     name = request.json['name']
 
-    if name is None:
+    if name is None or len(name.strip()) == 0:
         abort(400)
 
     team = Team(name=name)
@@ -107,7 +107,7 @@ def team_update(team_id):
         abort(400)
 
     name = request.json['name']
-    if name is None or name is '':
+    if name is None or len(name.strip()) == 0:
         abort(400)
 
     team.name = name
@@ -123,7 +123,6 @@ def team_delete(team_id):
     Delete a team given its id
     """
     team = Team.query.get(id=team_id)
-
     if team is None:
         abort(400)
 
@@ -146,7 +145,7 @@ def team_user_add(team_id):
         abort(400)
 
     user_id = request.json['user_id']
-    if user_id is None:
+    if user_id is None or len(user_id.strip()) == 0:
         abort(400)
 
     user = User.query.get(id=user_id)
@@ -170,7 +169,7 @@ def team_user_delete(team_id):
         abort(400)
 
     user_id = request.json['user_id']
-    if user_id is None:
+    if user_id is None or len(user_id.strip()) == 0:
         abort(400)
 
     user = User.query.get(id=user_id)
@@ -195,24 +194,36 @@ def reservation_add(res_id):
     """
     Add a reservation given the team id, room id, creator id, start and end datetimes
     """
-    team = Team.query.get(id=request.json['team_id'])
+    team_id = request.json['team_id']
+    if team_id is None or len(team_id.strip()) == 0:
+        abort(400)
+
+    team = Team.query.get(team_id)
     if team is None:
         abort(400)
 
-    room = Room.query.get(id=request.json['room_id'])
+    room_id = request.json['room_id']
+    if room_id is None or len(room_id.strip()) == 0:
+        abort(400)
+
+    room = Room.query.get(room_id)
     if room is None:
         abort(400)
 
-    creator = User.query.get(id=request.json['creator_id'])
+    creator_id = request.json['creator_id']
+    if creator_id is None or len(creator_id.strip()) == 0:
+        abort(400)
+
+    creator = User.query.get(creator_id)
     if creator is None:
         abort(400)
 
     start = request.json['start']
-    if start is None:
+    if start is None or len(start.strip()) == 0:
         abort(400)
 
     end = request.json['end']
-    if end is None:
+    if end is None or len(end.strip()) == 0:
         abort(400)
 
     res = Reservation(team=team, room=room, created_by=creator, start=start, end=end)
@@ -230,7 +241,6 @@ def reservation_read(res_id):
     Get a reservation's info given id
     """
     res = Reservation.query.get(id=res_id)
-
     if res is None:
         abort(400)
 
@@ -249,24 +259,36 @@ def reservation_update(res_id):
     """
     Update a reservation given team id, room id, creator id, start and end datetimes
     """
-    team = Team.query.get(id=request.json['team_id'])
+    team_id = request.json['team_id']
+    if team_id is None or len(team_id.strip()) == 0:
+        abort(400)
+
+    team = Team.query.get(team_id)
     if team is None:
         abort(400)
 
-    room = Room.query.get(id=request.json['room_id'])
+    room_id = request.json['room_id']
+    if room_id is None or len(room_id.strip()) == 0:
+        abort(400)
+
+    room = Room.query.get(room_id)
     if room is None:
         abort(400)
 
-    creator = User.query.get(id=request.json['creator_id'])
+    creator_id = request.json['creator_id']
+    if creator_id is None or len(creator_id.strip()) == 0:
+        abort(400)
+
+    creator = User.query.get(creator_id)
     if creator is None:
         abort(400)
 
     start = request.json['start']
-    if start is None:
+    if start is None or len(start.strip()) == 0:
         abort(400)
 
     end = request.json['end']
-    if end is None:
+    if end is None or len(end.strip()) == 0:
         abort(400)
 
     res = Reservation.query.get(id=res_id)
@@ -291,7 +313,6 @@ def reservation_delete(res_id):
     Remove a reservation given its id
     """
     res = Reservation.query.get(id=res_id)
-
     if res is None:
         abort(400)
 
@@ -312,7 +333,6 @@ def room_add(room_id):
     if not request.json or 'number' not in request.json:
         abort(400)
     num = request.json['number']
-
     if num is None or len(num.strip()) == 0:
         abort(400)
 
@@ -334,7 +354,6 @@ def room_read(room_id):
     Get a room's info given its id
     """
     room = Room.query.get(id=room_id)
-
     if room is None:
         abort(400)
 
@@ -356,8 +375,15 @@ def room_update(room_id):
     if room is None:
         abort(400)
 
-    room.number = request.json['number']
+    number = request.json['number']
+    if number is None or len(number.strip()) == 0:
+        abort(400)
+
+    room.number = number
+
     features = request.json['features']
+    if features is None:
+        abort(400)
 
     # remove relationships not in features
     for r in room.features:
@@ -381,7 +407,6 @@ def room_delete(room_id):
     Remove a room given its id
     """
     room = Room.query.get(id=room_id)
-
     if room is None:
         abort(400)
 
