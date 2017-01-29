@@ -162,8 +162,8 @@ class Team(Base):
     team_type_id = Column(Integer, ForeignKey('teamtypes.id'))
     team_type = relationship("TeamType", back_populates="teams")
     members = relationship('User',
-                         secondary=join_table_user_teams,
-                         back_populates='teams')
+                           secondary=join_table_user_teams,
+                           back_populates='teams')
     reservations = relationship('Reservation', back_populates='team')
 
     def __init__(self, name=None):
