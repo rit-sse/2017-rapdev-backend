@@ -1,23 +1,25 @@
+"""Database methods."""
+
 from sqlalchemy import create_engine
 from sqlalchemy.orm import scoped_session, sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
 
 engine = create_engine('sqlite:///test.db', convert_unicode=True)
 _db_session = scoped_session(sessionmaker(autocommit=False,
-                                         autoflush=False,
-                                         bind=engine))
+                                          autoflush=False,
+                                          bind=engine))
 Base = declarative_base()
 Base.query = _db_session.query_property()
 
+
 def get_db():
-    """
-    Returns the current db session
-    """
+    """Return the current DB session."""
     return _db_session
 
+
 def set_engine(new_querystring):
-    """
-    Swaps the current sqlite database location to the new destination.
+    """Swap the current sqlite database location to the new destination.
+
     FOR TESTING ONLY!
     """
     global engine, _db_session
@@ -26,7 +28,6 @@ def set_engine(new_querystring):
         sessionmaker(autocommit=False, autoflush=False, bind=engine)
     )
     Base.query = _db_session.query_property()
-
 
 
 def init_db():

@@ -1,9 +1,13 @@
+"""Teamroom Tracking System.
+
+Main logic and API routes.
+"""
+
 from flask import Flask, request, abort, Response
 from database import get_db
 from models import *
 from functools import wraps
 import json
-import jwt
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy import or_
 import datetime

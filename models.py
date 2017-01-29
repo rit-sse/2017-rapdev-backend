@@ -1,3 +1,5 @@
+"""Models."""
+
 from sqlalchemy import Column, Integer, String, Table, ForeignKey, DateTime
 from sqlalchemy.orm import relationship
 from database import Base
@@ -7,13 +9,15 @@ import jwt
 secret = 'secret'
 
 
-join_table_user_roles = Table('user_roles', Base.metadata,
+join_table_user_roles = Table(
+    'user_roles', Base.metadata,
     Column('user_id', Integer, ForeignKey('users.id')),
     Column('role_id', Integer, ForeignKey('roles.id'))
 )
 
 
-join_table_user_teams = Table('user_teams', Base.metadata,
+join_table_user_teams = Table(
+    'user_teams', Base.metadata,
     Column('user_id', Integer, ForeignKey('users.id')),
     Column('team_id', Integer, ForeignKey('teams.id'))
 )
@@ -39,9 +43,11 @@ class User(Base):
         self.email = email
 
     def generate_auth_token(self):
+        """Create a JWT token with the user ID."""
         return jwt.encode({'id': self.id}, secret, algorithm='HS256')
 
     def verify_auth_token(self, token):
+        """Get the user from a JWT token."""
         decoded = jwt.decode(token, secret, algorithms=['HS256'])
         user = User.query.get(decoded['id'])
         return user
@@ -49,6 +55,7 @@ class User(Base):
     def as_dict(self, include_teams_and_permissions=False):
         """
         Get the user as a dictionary.
+
         Optionally includes the user's teams and permissions.
         """
         if include_teams_and_permissions:
@@ -71,7 +78,8 @@ class User(Base):
                 'email': self.email
             }
 
-join_table_role_permissions = Table('role_permissions', Base.metadata,
+join_table_role_permissions = Table(
+    'role_permissions', Base.metadata,
     Column('role_id', Integer, ForeignKey('roles.id')),
     Column('permission_id', Integer, ForeignKey('permissions.id'))
 )
@@ -80,6 +88,7 @@ join_table_role_permissions = Table('role_permissions', Base.metadata,
 class Role(Base):
     """
     Role for a user.
+
     Examples: Student
     """
 
@@ -149,7 +158,8 @@ class Team(Base):
         self.name = name
 
 
-join_table_room_roomfeatures = Table('room_roomfeatures', Base.metadata,
+join_table_room_roomfeatures = Table(
+    'room_roomfeatures', Base.metadata,
     Column('room_id', Integer, ForeignKey('rooms.id')),
     Column('roomfeature_id', Integer, ForeignKey('roomfeatures.id'))
 )
@@ -173,6 +183,7 @@ class Room(Base):
     def as_dict(self, include_features=False):
         """
         Get the room as a dictionary.
+
         Optionally include the features of the room.
         """
         if include_features:
