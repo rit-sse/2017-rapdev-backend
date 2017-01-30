@@ -40,7 +40,6 @@ class User(Base):
     @staticmethod
     def verify_auth_token(token):
         """Get the user from a JWT token."""
-        decoded = None
         try:
             decoded = jwt.decode(token, secret, algorithms=['HS256'])
         except jwt.DecodeError:
@@ -177,7 +176,8 @@ class Team(Base):
             "id": self.id,
             "type": self.team_type.name
         }
-        if for_user and (for_user.has_permission('team.read.elevated') or \
+        if for_user and \
+            (for_user.has_permission('team.read.elevated') or
                 (for_user.has_permission('team.read')
                     and self.has_member(for_user))):
             base["name"] = self.name
@@ -315,8 +315,8 @@ class Reservation(Base):
                     can_override = False
                     break
             if can_override:
-                return (Reservation.CONFLICT_OVERRIDABLE, conflicting_reservations)
+                return Reservation.CONFLICT_OVERRIDABLE, conflicting_reservations
             else:
-                return (Reservation.CONFLICT_FAILURE, conflicting_reservations)
+                return Reservation.CONFLICT_FAILURE, conflicting_reservations
         else:
-            return (Reservation.NO_CONFLICT, conflicting_reservations)
+            return Reservation.NO_CONFLICT, conflicting_reservations

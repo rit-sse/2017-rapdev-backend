@@ -96,7 +96,7 @@ class TestCase(unittest.TestCase):
             '/v1/team',
             data='{"name": "newteam1", "type": "other_team"}',
             content_type='application/json',
-            headers = {"Authorization": "Bearer " + u.generate_auth_token()}
+            headers={"Authorization": "Bearer " + u.generate_auth_token()}
         )
         self.assertEquals(rv.status_code, 201)
         t = Team.query.filter_by(name='newteam1').first()
@@ -111,7 +111,7 @@ class TestCase(unittest.TestCase):
             '/v1/team',
             data='{"name": "newteam1", "type": "class"}',
             content_type='application/json',
-            headers = {"Authorization": "Bearer " + u.generate_auth_token()}
+            headers={"Authorization": "Bearer " + u.generate_auth_token()}
         )
         self.assertEquals(rv.status_code, 403)
         team_count = len(Team.query.all())
@@ -129,7 +129,7 @@ class TestCase(unittest.TestCase):
         rv = self.app.get(
             '/v1/team/' + str(team.id),
             content_type='application/json',
-            headers = {"Authorization": "Bearer " + u.generate_auth_token()}
+            headers={"Authorization": "Bearer " + u.generate_auth_token()}
         )
         self.assertEquals(rv.status_code, 200)
         got = json.loads(rv.data)
@@ -155,7 +155,7 @@ class TestCase(unittest.TestCase):
         rv = self.app.get(
             '/v1/team/' + str(team.id),
             content_type='application/json',
-            headers = {
+            headers={
                 "Authorization": "Bearer " + student.generate_auth_token()
             }
         )
@@ -183,7 +183,6 @@ class TestCase(unittest.TestCase):
         token = u.generate_auth_token()
         got = User.verify_auth_token(token)
         self.assertIsNone(got)
-
 
     def test_delete_team(self):
         """Test that teams can be deleted and their associated reservations will be deleted."""
@@ -277,7 +276,7 @@ class TestCase(unittest.TestCase):
         room_id = room.id
 
         start_time = "2017-12-25T12:30:00+05:00"  # datetime.datetime.now().isoformat()
-        end_time = "2017-12-25T13:30:00+05:00" # (datetime.datetime.now() + datetime.timedelta(hours=1)).isoformat()
+        end_time = "2017-12-25T13:30:00+05:00"  # (datetime.datetime.now() + datetime.timedelta(hours=1)).isoformat()
 
         # Create initial reservation
         rv = self.app.post(
@@ -415,21 +414,23 @@ class TestCase(unittest.TestCase):
         token = student.generate_auth_token()
 
         # Create low-priority reservation
-        reservation_low = Reservation(start=start_time,
-                                  end=end_time,
-                                  team=initial_team,
-                                  room=room,
-                                  created_by=student
-                                  )
+        reservation_low = Reservation(
+            start=start_time,
+            end=end_time,
+            team=initial_team,
+            room=room,
+            created_by=student
+        )
         database.get_db().add(reservation_low)
 
         # Create high-priority reservation, right next to low-priority one
-        reservation_high = Reservation(start=end_time,
-                                      end=end_time + datetime.timedelta(hours=1),
-                                      team=override_team,
-                                      room=room,
-                                      created_by=student
-                                      )
+        reservation_high = Reservation(
+            start=end_time,
+            end=end_time + datetime.timedelta(hours=1),
+            team=override_team,
+            room=room,
+            created_by=student
+        )
         database.get_db().add(reservation_high)
         database.get_db().commit()
 
@@ -507,7 +508,6 @@ class TestCase(unittest.TestCase):
         new_team = Team.query.filter_by(name='test').first()
         self.assertEquals(len(new_team.members), 2)
 
-
     def test_remove_team_member_valid(self):
             """Test that users can be deleted from teams."""
             team_creator = User.query.filter_by(name='student').first()
@@ -555,7 +555,7 @@ class TestCase(unittest.TestCase):
         database.get_db().commit()
         # test removing the user from the team
         rv = self.app.get(
-            '/v1/reservation/' + str(reservation.id) ,
+            '/v1/reservation/' + str(reservation.id),
             content_type='application/json',
             headers={
                 'Authorization': 'Bearer ' + u.generate_auth_token()
@@ -569,7 +569,6 @@ class TestCase(unittest.TestCase):
         self.assertEquals(got["room"]["number"], reservation.room.number)
         self.assertEquals(got["id"], reservation.id)
 
-
     def test_room_read(self):
         """ test that querying an existing room returns json data """
         room = Room.query.first()
@@ -582,7 +581,6 @@ class TestCase(unittest.TestCase):
         self.assertTrue('features' in got)
         self.assertTrue(len(got['features']) > 0)
 
-
     def test_room_not_found(self):
         """Test that get room returns a 404 for unknown rooms."""
         self.assertIsNone(Room.query.get(100))
@@ -591,7 +589,6 @@ class TestCase(unittest.TestCase):
             content_type='application/json'
         )
         self.assertEquals(rv.status_code, 404)
-
 
     def test_add_team_member_invalid_not_on_team(self):
         """Test that users can be added from teams."""
@@ -621,7 +618,6 @@ class TestCase(unittest.TestCase):
         new_team = Team.query.filter_by(name='test').first()
         self.assertEquals(len(new_team.members), 1)
 
-
     def test_add_team_member_invalid_single_team(self):
         """Test that users can be added from teams."""
         team_creator = User.query.filter_by(name='student').first()
@@ -650,7 +646,6 @@ class TestCase(unittest.TestCase):
         new_team = Team.query.filter_by(name='test').first()
         self.assertEquals(len(new_team.members), 1)
 
-
     def test_add_team_member_invalid_user_id(self):
         """Test that users can be added from teams."""
         team_creator = User.query.filter_by(name='student').first()
@@ -658,13 +653,11 @@ class TestCase(unittest.TestCase):
         t.members.append(team_creator)
         team_type = TeamType.query.filter_by(name='other_team').first()
         t.team_type = team_type
-        second_user = User.query.filter_by(name='labbie').first()
 
         database.get_db().add(t)
         database.get_db().commit()
 
         team_id = t.id
-        second_user_id = second_user.id
 
         self.assertIsNone(User.query.get(100))
 
@@ -680,7 +673,6 @@ class TestCase(unittest.TestCase):
 
         new_team = Team.query.filter_by(name='test').first()
         self.assertEquals(len(new_team.members), 1)
-
 
     def test_add_team_member_invalid_already_in_team(self):
         """Test that users can be added from teams."""
