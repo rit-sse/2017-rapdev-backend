@@ -218,7 +218,6 @@ class TestCase(unittest.TestCase):
         self.assertEquals(team_count_original, team_count_new)
         self.assertEquals(reservation_count_original, reservation_count_new)
 
-
     def test_add_basic_reservation(self):
         num_reservations_before = len(Reservation.query.all())
         student = User.query.filter_by(name='student').first()
@@ -343,6 +342,142 @@ class TestCase(unittest.TestCase):
 
         num_reservations_after = len(Reservation.query.all())
         self.assertEquals(num_reservations_after - num_reservations_before, 1)
+
+    def test_update_basic_reservation(self):
+        student = User.query.filter_by(name='student').first()
+        team_type = TeamType.query.filter_by(name='other_team').first()
+        team = Team(name="testteam1")
+        team.team_type = team_type
+        team.members.append(student)
+        database.get_db().add(team)
+
+        room = Room.query.first()
+        start_time = datetime.datetime.now()
+        end_time = datetime.datetime.now() + datetime.timedelta(hours=1)
+
+        token = student.generate_auth_token()
+
+        reservation = Reservation(start=start_time,
+                                  end=end_time,
+                                  team=team,
+                                  room=room,
+                                  created_by=student
+                                  )
+        database.get_db().add(reservation)
+        database.get_db().commit()
+
+        reservation_id = reservation.id
+        team_id = team.id
+
+        num_reservations_before = len(Reservation.query.all())
+
+        rv = self.app.put(
+            '/v1/reservation/' + str(reservation_id),
+            data=json.dumps({
+                "room_id": room.id,
+                "start": (start_time + datetime.timedelta(minutes=10)).isoformat(),
+                "end": (end_time + datetime.timedelta(minutes=10)).isoformat()
+            }),
+            content_type='application/json',
+            headers={
+                "Authorization": "Bearer " + token
+            }
+        )
+
+        num_reservations_after = len(Reservation.query.all())
+        self.assertEquals(rv.status_code, 204)
+        self.assertEquals(len(Reservation.query.filter_by(team_id=team_id).all()), 1)
+        self.assertEquals(num_reservations_after, num_reservations_before)
+
+    def test_update_reservation_conflict_override(self):
+        """Update a reservation, and then override it. """
+        student = User.query.filter_by(name='student').first()
+
+        # Low-priority team
+        team_type = TeamType.query.filter_by(name='other_team').first()
+        initial_team = Team(name="other_team_1")
+        initial_team.team_type = team_type
+        initial_team.members.append(student)
+        database.get_db().add(initial_team)
+
+        # High-priority team
+        team_type = TeamType.query.filter_by(name='senior_project').first()
+        override_team = Team(name="senior_project_1")
+        override_team.team_type = team_type
+        override_team.members.append(student)
+        database.get_db().add(override_team)
+
+        room = Room.query.first()
+
+        start_time = datetime.datetime.now()
+        end_time = start_time + datetime.timedelta(hours=1)
+
+        token = student.generate_auth_token()
+
+        # Create low-priority reservation
+        reservation_low = Reservation(start=start_time,
+                                  end=end_time,
+                                  team=initial_team,
+                                  room=room,
+                                  created_by=student
+                                  )
+        database.get_db().add(reservation_low)
+
+        # Create high-priority reservation, right next to low-priority one
+        reservation_high = Reservation(start=end_time,
+                                      end=end_time + datetime.timedelta(hours=1),
+                                      team=override_team,
+                                      room=room,
+                                      created_by=student
+                                      )
+        database.get_db().add(reservation_high)
+        database.get_db().commit()
+
+        reservation_high_id = reservation_high.id
+        initial_team_id = initial_team.id
+        override_team_id = override_team.id
+        room_id = room.id
+
+        # Attempt to update high-priority to conflict
+        rv = self.app.put(
+            '/v1/reservation/' + str(reservation_high_id),
+            data=json.dumps({
+                "room_id": room_id,
+                "start": start_time.isoformat(),
+                "end": (end_time + datetime.timedelta(hours=1)).isoformat()
+            }),
+            content_type='application/json',
+            headers={
+                "Authorization": "Bearer " + token
+            }
+        )
+        # Reservation not yet updated
+        self.assertEquals(rv.status_code, 409)
+        response_json = json.loads(rv.data)
+        self.assertTrue("overridable" in response_json)
+        self.assertTrue(response_json["overridable"])
+        self.assertEquals(len(Reservation.query.filter_by(team_id=override_team_id).all()), 1)
+        self.assertEquals(len(Reservation.query.filter_by(team_id=initial_team_id).all()), 1)
+
+        # Actually update the high-priority reservation, deleting the conflicting one
+        rv = self.app.put(
+            '/v1/reservation/' + str(reservation_high_id),
+            data=json.dumps({
+                "room_id": room_id,
+                "start": start_time.isoformat(),
+                "end": (end_time + datetime.timedelta(hours=1)).isoformat(),
+                "override": True
+            }),
+            content_type='application/json',
+            headers={
+                "Authorization": "Bearer " + token
+            }
+        )
+
+        self.assertEquals(rv.status_code, 204)
+
+        self.assertEquals(len(Reservation.query.filter_by(team_id=override_team_id).all()), 1)
+        self.assertEquals(len(Reservation.query.filter_by(team_id=initial_team_id).all()), 0)
 
     def test_add_team_member_valid(self):
         """Test that users can be added from teams."""

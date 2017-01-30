@@ -304,7 +304,8 @@ class Reservation(Base):
         conflicting_reservations = Reservation.query.filter(
             Reservation.end >= self.start,
             Reservation.start <= self.end,
-            Reservation.room_id == self.room.id
+            Reservation.room_id == self.room.id,
+            Reservation.id != self.id
         ).all()
 
         if len(conflicting_reservations) > 0:

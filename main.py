@@ -25,6 +25,7 @@ def parse_datetime(date_string):
         return None
     return date.astimezone(pytz.utc).replace(tzinfo=None)
 
+
 def returns_json(f):
     """Decorator to add the content type to responses."""
     @wraps(f)
@@ -86,6 +87,7 @@ def shutdown_session(exception=None):
     """End the database session."""
     get_db().remove()
 
+
 @app.route('/v1/auth', methods=['POST'])
 @returns_json
 def auth():
@@ -115,7 +117,7 @@ def auth():
 
 @app.route('/v1/user/<int:user_id>', methods=['GET'])
 @returns_json
-#TODO secure this?
+# TODO secure this?
 def user_read(user_id):
     """Get a user by user ID."""
     user = User.query.get(user_id)
@@ -173,7 +175,6 @@ def team_add(token_user):
     except IntegrityError:
         abort(409, 'team name is already in use')
 
-
     return '', 201
 
 
@@ -205,10 +206,8 @@ def team_update(token_user, team_id):
     name = request.json['name']
 
     if not (token_user.has_permission('team.update.elevated') or
-                (token_user.has_permission('team.update') and
-                         team.has_member(token_user)
-                )
-            ):
+            (token_user.has_permission('team.update') and
+             team.has_member(token_user))):
         abort(403, 'insufficient permissions to modify team')
 
     team.name = name
@@ -236,10 +235,8 @@ def team_delete(token_user, team_id):
 
     # check for permissions to delete the team
     if not (token_user.has_permission('team.delete.elevated') or
-                (token_user.has_permission('team.delete') and
-                         team.has_member(token_user)
-                )
-            ):
+            (token_user.has_permission('team.delete') and
+             team.has_member(token_user))):
         abort(403, 'insufficient permissions to delete team')
 
     # deschedule reservations for the team then delete the team
@@ -263,12 +260,9 @@ def team_user_add(token_user, team_id, user_id):
 
     # check for permissions to update the team
     if not (token_user.has_permission('team.update.elevated') or
-                (token_user.has_permission('team.update') and
-                         team.has_member(token_user)
-                )
-            ):
+            (token_user.has_permission('team.update') and
+             team.has_member(token_user))):
         abort(403, 'insufficient permissions to add user to team')
-
 
     # don't allow adding to 'single' teams
     if team.team_type == TeamType.query.filter_by(name='single').first():
@@ -301,10 +295,8 @@ def team_user_delete(token_user, team_id, user_id):
 
     # check for permissions to delete the team
     if not (token_user.has_permission('team.update.elevated') or
-                (token_user.has_permission('team.update') and
-                         team.has_member(token_user)
-                )
-            ):
+            (token_user.has_permission('team.update') and
+             team.has_member(token_user))):
         abort(403, 'insufficient permissions to delete user from team')
 
     user = User.query.get(user_id)
@@ -430,7 +422,22 @@ def reservation_update(token_user, res_id):
     res.start = start
     res.end = end
 
-    # TODO prevent double-booking. See reservation_add(...)
+    attempt_override = False
+    if json_param_exists("override") and isinstance(request.json["override"], bool):
+        attempt_override = request.json["override"]
+
+    conflict_status, conflicting_reservations = res.validate_conflicts()
+    if conflict_status == Reservation.NO_CONFLICT:
+        pass
+    elif conflict_status == Reservation.CONFLICT_OVERRIDABLE:
+        if attempt_override:
+            # Delete conflicting reservations
+            for conflict in conflicting_reservations:
+                get_db().delete(conflict)
+        else:
+            return json.dumps({"overridable": True}), 409
+    elif conflict_status == Reservation.CONFLICT_FAILURE:
+        return json.dumps({"overridable": False}), 409
 
     get_db().commit()
 
@@ -439,7 +446,7 @@ def reservation_update(token_user, res_id):
 
 @app.route('/v1/reservation/<int:res_id>', methods=['DELETE'])
 @returns_json
-#TODO secure this
+# TODO secure this
 def reservation_delete(res_id):
     """Remove a reservation given its ID."""
     res = Reservation.query.get(res_id)
@@ -467,7 +474,7 @@ def room_list():
 
 @app.route('/v1/room', methods=['POST'])
 @returns_json
-#TODO secure this
+# TODO secure this
 def room_add():
     """Add a room, given the room number."""
     if not json_param_exists('number'):
@@ -500,7 +507,7 @@ def room_read(room_id):
 
 @app.route('/v1/room/<int:room_id>', methods=['PUT'])
 @returns_json
-#TODO secure this
+# TODO secure this
 def room_update(room_id):
     """Update a room given its room number and feature list."""
     room = Room.query.get(room_id)
@@ -536,7 +543,7 @@ def room_update(room_id):
 
 @app.route('/v1/room/<int:room_id>', methods=['DELETE'])
 @returns_json
-#TODO secure this
+# TODO secure this
 def room_delete(room_id):
     """Remove a room given its ID."""
     room = Room.query.get(room_id)
@@ -558,7 +565,6 @@ def feature_list():
         features.append(feature.as_dict())
 
     return json.dumps(features)
-
 
 
 @app.route('/v1/reservation', methods=['GET'])

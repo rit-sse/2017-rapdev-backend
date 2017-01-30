@@ -250,11 +250,11 @@ def seed():
         get_db().add(u)
 
     reservation = models.Reservation(
-        start = datetime.datetime.now() + datetime.timedelta(days=7),
-        end = datetime.datetime.now() + datetime.timedelta(days=7, hours=1),
-        team = users_dict['admin'].teams[0],
-        room = rooms_dict['1660'],
-        created_by = users_dict['admin']
+        start=datetime.datetime.now() + datetime.timedelta(days=7),
+        end=datetime.datetime.now() + datetime.timedelta(days=7, hours=1),
+        team=users_dict['admin'].teams[0],
+        room=rooms_dict['1660'],
+        created_by=users_dict['admin']
     )
     get_db().add(reservation)
 
