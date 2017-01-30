@@ -480,6 +480,51 @@ class TestCase(unittest.TestCase):
         self.assertEquals(len(Reservation.query.filter_by(team_id=override_team_id).all()), 1)
         self.assertEquals(len(Reservation.query.filter_by(team_id=initial_team_id).all()), 0)
 
+    def test_delete_reservation(self):
+        """Test deleting a reservation."""
+        num_reservations_before = len(Reservation.query.all())
+        student = User.query.filter_by(name='student').first()
+        team_type = TeamType.query.filter_by(name='other_team').first()
+        team = Team(name="testteam1")
+        team.team_type = team_type
+        team.members.append(student)
+        database.get_db().add(team)
+
+        room = Room.query.first()
+        start_time = datetime.datetime.now()
+        end_time = datetime.datetime.now() + datetime.timedelta(hours=1)
+
+        token = student.generate_auth_token()
+
+        reservation = Reservation(
+            start=start_time,
+            end=end_time,
+            team=team,
+            room=room,
+            created_by=student
+        )
+        database.get_db().add(reservation)
+        database.get_db().commit()
+
+        reservation_id = reservation.id
+        team_id = team.id
+
+        num_reservations_after = len(Reservation.query.all())
+        self.assertEquals(num_reservations_after - num_reservations_before, 1)
+        self.assertEquals(len(Reservation.query.filter_by(team_id=team_id).all()), 1)
+
+        rv = self.app.delete(
+            '/v1/reservation/' + str(reservation_id),
+            headers={
+                "Authorization": "Bearer " + token
+            }
+        )
+
+        self.assertEquals(rv.status_code, 204)
+        num_reservations_after = len(Reservation.query.all())
+        self.assertEquals(num_reservations_after, num_reservations_before)
+        self.assertEquals(len(Reservation.query.filter_by(team_id=team_id).all()), 0)
+
     def test_add_team_member_valid(self):
         """Test that users can be added from teams."""
         team_creator = User.query.filter_by(name='student').first()

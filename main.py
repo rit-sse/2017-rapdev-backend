@@ -446,12 +446,19 @@ def reservation_update(token_user, res_id):
 
 @app.route('/v1/reservation/<int:res_id>', methods=['DELETE'])
 @returns_json
-# TODO secure this
-def reservation_delete(res_id):
+@includes_user
+def reservation_delete(token_user, res_id):
     """Remove a reservation given its ID."""
     res = Reservation.query.get(res_id)
     if res is None:
         abort(404, 'reservation not found')
+
+    if not token_user.has_permission('reservation.delete.elevated'):
+        is_my_reservation = any(map(lambda m: m.id == token_user.id,
+            res.team.members))
+        if not (is_my_reservation and
+            token_user.has_permission('reservation.delete')):
+            abort(403, 'insufficient permissions to delete reservation')
 
     get_db().delete(res)
     get_db().commit()
